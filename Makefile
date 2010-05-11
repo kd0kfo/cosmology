@@ -4,10 +4,10 @@ COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
 SUFFIX = 
 
-LIBDNSTD_PATH = /home/david/research/libdnstd
-LIBMYGL_PATH = /home/david/research/ray_trace
-LIBMYFFT_PATH = /home/david/research/fft
-MYINCLUDES = -I../ray_trace/ -I../libdnstd/ -I../fft/ -I../ray_trace/EasyBMP/
+LIBDNSTD_PATH = ../libdnstd
+LIBMYGL_PATH = ../libmygl
+LIBMYFFT_PATH = ../fft
+MYINCLUDES = -I../libmygl/ -I../libdnstd/ -I../fft/ -I../libmygl/EasyBMP/
 
 all: ray_trace_ellipse flatten utilities mass_to_shear mycosmo makecluster
 
