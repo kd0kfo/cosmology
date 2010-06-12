@@ -351,7 +351,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 
       Plane<Double> * dPlane = new Plane<Double>(storedStuff->get(data));
       
-      double * junx = PlaneToComplexArray(dPlane);
+      std::complex<double> * junx = PlaneToComplexArray(dPlane);
 
       unsigned long * nn = new unsigned long[2];
       nn[0] = dPlane->numberOfRows();
@@ -366,7 +366,12 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	  throw DavidException("The dimensions supplied to the FFT must be a power of 2.");
 	}
 
-      FFT::ndim_discrete(junx - 1,nn - 1,2, (int) fourierdirection.doubleValue());
+      unsigned fftDirection = FFTW_FORWARD;
+      
+      if(fourierdirection.doubleValue() == -1)
+	fftDirection = FFTW_BACKWARD;
+      
+      math::FFT::ndim_discrete(junx,nn,2, fftDirection);
 
       double normconst = 1;
       if(fourierdirection == -1)
@@ -424,6 +429,8 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("convolve"))
     {
+      returnMe = "Verify that this works (function convolve)";
+      /*
       if(storedStuff->getNumberOfKeys() < 2 || numberOfParameters < 3)
 	throw DavidException("Two Planes and three Parameters are needed");
 
@@ -456,13 +463,13 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	  throw DavidException("All dimensions must be a power of 2.");
 	}
 
-      double * leftDoubles = PlaneToComplexArray(left);
-      double * rightDoubles = PlaneToComplexArray(right);
+      std::complex<double> * leftDoubles = PlaneToComplexArray(left);
+      std::complex<double> * rightDoubles = PlaneToComplexArray(right);
 
-      FFT::ndim_discrete(leftDoubles-1,nn-1,2,1);
-      FFT::ndim_discrete(rightDoubles-1,nn-1,2,1);
+      FFT::ndim_discrete(leftDoubles,nn,2,1);
+      FFT::ndim_discrete(rightDoubles,nn,2,1);
 
-      double * convolve = new double[nn[0]*nn[1]*2];
+      std::complex<double> * convolve = new complex<double>[nn[0]*nn[1]];
 
       for(int i = 0;i<nn[0]*nn[1];i++)
 	convolve[i] = leftDoubles[i] * rightDoubles[i];
@@ -495,7 +502,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       delete [] convolve;
 
       returnMe = DString("The convolution of ") + parameters[0] + DString(" and ") + parameters[1] + DString(" was saved as ") + parameters[2];
-      
+      /**/
     }
   else if(bean.equals("sum"))
     {
@@ -1307,43 +1314,39 @@ DString Functions::getHelp(const DString& bean)
 }
 
 
-double * Functions::PlaneToComplexArray(Plane<Double> * dPlane)
+std::complex<double> * Functions::PlaneToComplexArray(Plane<Double> * dPlane)
 {
 
   int rows = dPlane->numberOfRows();
   int columns = dPlane->numberOfColumns();
   
-  double * junx = new double[rows*columns*2];
+  std::complex<double> * cplane = new std::complex<double>[rows*columns];
   int counter = 0;
   for(int i = 0;i<rows;i++)
     for(int j = 0;j<columns;j++)
       {
-	junx[counter] = dPlane->getValue(i,j).doubleValue();
-	junx[counter + 1] = dPlane->getValue(i,j).getValue(1);
-	counter += 2;
+	cplane[counter] = std::complex<double>(dPlane->getValue(i,j).doubleValue(),dPlane->getValue(i,j).getValue(1));
+	counter++;
       }
 
-  return junx;
-
-
+  return cplane;
 }
 
 
-Plane<Double> *  Functions::ComplexArrayToPlane(double * cPlane, int rows, int columns, double norm)
+  Plane<Double> *  Functions::ComplexArrayToPlane(std::complex<double> * cPlane, int rows, int columns, double norm)
 {
 
-  Plane<Double> * junx = new Plane<Double>(rows,columns, 0.0);
+  Plane<Double> * dPlane = new Plane<Double>(rows,columns, 0.0);
   int counter = 0;
   for(int i = 0;i<rows;i++)
     for(int j = 0;j<columns;j++)
       {
-	Double curr(cPlane[counter]/norm,cPlane[counter+1]/norm,0);
-	junx->setValue(i,j,curr);
-	counter += 2;
+	  Double curr(cPlane[counter].real()/norm,cPlane[counter].imag()/norm,0);
+	  dPlane->setValue(i,j,curr);
+	  counter++;
       }
 
-  return junx;
-
+  return dPlane;
 
 }
 

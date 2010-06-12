@@ -1,4 +1,4 @@
-COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static
+COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -D__USE_BOINC__
 #COMPILER = c++ -fpermissive -w -D__USE_BOINC__ -D__VERBOSE__ -static
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
@@ -24,7 +24,7 @@ mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o planeinstanti
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}
 
 mycosmo:  Functions.o utilities.o Command.o CommandWords.o Parser.cpp  flatten.o planeinstantiations.o DArrayinstantiations.o  DStackinstantiations.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a ${LIBMYFFT_PATH}/libmyfft.a -o mycosmo${SUFFIX}
+	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a ${LIBMYFFT_PATH}/libmyfft.a -o mycosmo${SUFFIX} -lfftw3 -lm
 
 makecluster: makecluster.cpp create_cluster.o makeclusterplaneinstantiations.o 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}
@@ -36,5 +36,5 @@ clean:
 	rm -f *.o makecluster${SUFFIX}  mycosmo${SUFFIX} mass_to_shear${SUFFIX} utilities${SUFFIX} flatten${SUFFIX} ray_trace_ellipse${SUFFIX}
 
 .cpp.o: %.h
-	${COMPILER} ${MYINCLUDES} -c $< 
+	${COMPILER} ${MYINCLUDES} -c $< -lfftw3 -lm
 

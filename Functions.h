@@ -3,6 +3,7 @@
 
 #include <dirent.h>//Directory entries
 #include <vector>
+#include <complex>
 
 #include "DHashMap.cpp"
 #include "Double.h"
@@ -28,8 +29,8 @@
 		static DString doFunction(const DString& bean, DString * parameters,int numberOfParameters,double * gparameters, int numberOfGparameters, DHashMap<Plane<Double> > * storedStuff, DString * currentDirectory);
 		static DString listFunctions();
 		static DString getHelp(const DString&);
-		static double * PlaneToComplexArray(Plane<Double> * dPlane);
-		static Plane<Double> *  ComplexArrayToPlane(double * cPlane, int rows, int columns, double normalizationConst = 1);
+		static std::complex<double> * PlaneToComplexArray(Plane<Double> * dPlane);
+		static Plane<Double> *  ComplexArrayToPlane(std::complex<double> * cPlane, int rows, int columns, double normalizationConst = 1);
 		static std::vector<Double> matrixMultiply(std::vector<Double> a, std::vector<Double> b, int I, int J, int K);
 		static Plane<Double> * directProduct(Plane<Double> * a, Plane<Double> * b);
 		static std::vector<Double> addMatrices(std::vector<Double> A,std::vector<Double> B,int rows,int columns) throw (DavidException);
