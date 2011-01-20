@@ -1,8 +1,8 @@
 #ifndef COMMANDWORDS_CPP
 #define COMMANDWORDS_CPP
 
-#include "DArray.h"
-#include "DString.h"
+#include "libdnstd/DArray.h"
+#include "libdnstd/DString.h"
 
 
 class CommandWords

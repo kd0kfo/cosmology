@@ -1,7 +1,8 @@
-#include "plane.cpp"
-#include "Double.h"
-#include "Complex.h"
-#include "DStack.h"
+#include "libmygl/plane.h"
+
+#include "libdnstd/Double.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/DStack.h"
 
 template class Plane<Double>;
 template class Plane<math::Complex>;

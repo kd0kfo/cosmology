@@ -6,13 +6,12 @@
 #include <iostream>
 #include <fstream>
 
-#include "Double.h"
-#include "DRandom.h"
-#include "DavidException.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DRandom.h"
+#include "libdnstd/DavidException.h"
 
-#include "Cosmology.h"
+#include "libdnstd/Cosmology.h"
 
-#include "Double.h"
 
 #ifdef __VERBOSE__
 #define VERBOSE_PRINT(X) std::cout << X << std::endl;

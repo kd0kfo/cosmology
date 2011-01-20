@@ -6,11 +6,11 @@
 #include <fstream>
 #include <vector>
 
-#include "DavidException.h"
-#include "Complex.h"
-#include "Cosmology.h"
+#include "libdnstd/DavidException.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/Cosmology.h"
+#include "libdnstd/DArray.cpp"
 
-#include "DArray.cpp"
 template class utils::DArray<DString>;
 
 #ifdef __DEBUG__

@@ -5,9 +5,10 @@
 #include "CommandWords.h"
 #include "Help.cpp"
 #include "Functions.h"
-#include "DArray.h"
 
-#include "planecreator.h"
+#include "libdnstd/DArray.h"
+
+#include "libmygl/planecreator.h"
 
 class David{
  public:

@@ -1,6 +1,6 @@
-#include "DStack.cpp"
-#include "DString.h"
-#include "Double.h"
+#include "libdnstd/DStack.h"
+#include "libdnstd/DString.h"
+#include "libdnstd/Double.h"
 
 
 template class utils::DStack<DString>;

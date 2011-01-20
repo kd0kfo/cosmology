@@ -5,17 +5,17 @@
 #include <vector>
 #include <complex>
 
-#include "DHashMap.cpp"
-#include "Double.h"
-#include "DArray.h"
-#include "StringTokenizer.h"
-#include "DStack.h"
-#include "Complex.h"
+#include "libdnstd/DHashMap.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DArray.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/DStack.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/fft.h"
 
-#include "Cosmology.h"
-#include "planecreator.h"
+#include "libmygl/Cosmology.h"
+#include "libmygl/planecreator.h"
 
-#include "fft.h"
 
 #include "flatten.h"
 #include "utilities.h"

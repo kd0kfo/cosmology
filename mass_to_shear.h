@@ -21,46 +21,24 @@
 #include <time.h>
 #endif
 
-#ifndef DSTRING_CPP
-#include "DString.h"
-#endif 
+#include "libdnstd/DString.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DRandom.h"
+#include "libdnstd/Complex.cpp"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/DList.cpp"
+#include "libndstd/DNode.cpp"
 
-#ifndef DOUBLE_CPP
-#include "Double.h"
-#endif
-
-#ifndef DRANDOM_CPP
-#include "DRandom.h"
-#endif
-
-
-#include "glshear.h"
-
-#ifndef COMPLEX_CPP
-#include "Complex.cpp"
-#endif
-
-
-#ifndef DENSITYPROFILE_CPP
-#include "densityprofile.h"
-#endif/**/
-
-#ifndef STRINGTOKENIZER_CPP
-#include "StringTokenizer.h"
-#endif
-
-#ifndef PLANECREATOR_CPP
-#include "planecreator.cpp"
-#endif
+#include "libmygl/densityprofile.h"
+#include "libmygl/planecreator.cpp"
+#include "libmygl/glshear.h"
 
 #ifndef __USE_BOINC__
 #include "mydaemon.cpp"
 #endif
 
-#include "DList.cpp"
 template class DList<Double>;
 
-#include "DNode.cpp"
 template class DNode<Double>;
 
 /** \mainpage Documentation of the Main Executables.

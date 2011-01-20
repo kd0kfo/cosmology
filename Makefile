@@ -4,21 +4,21 @@ COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
 SUFFIX = 
 
-LIBDNSTD_PATH = ../libdnstd
-LIBMYGL_PATH = ../libmygl
-LIBMYFFT_PATH = ../fft
-MYINCLUDES = -I../libmygl/ -I../libdnstd/ -I../fft/ -I../libmygl/EasyBMP/
+LIBDNSTD_PATH = /home/david/opt/libdnstd
+LIBMYGL_PATH = /home/david/opt/libmygl
+LIBMYFFT_PATH = $(LIBDNSTD_PATH)
+MYINCLUDES = -I../libmygl/src/ -I../libdnstd/src/ -I../fft/ -I../libmygl/src/EasyBMP/  -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
 
 all: ray_trace_ellipse flatten utilities mass_to_shear mycosmo makecluster
 
 ray_trace_ellipse: ray_trace_ellipse.o planeinstantiations.o DStackinstantiations.o DArrayinstantiations.o 
-	${COMPILER} ${MYINCLUDES}  $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o ray_trace_ellipse${SUFFIX}
+	${COMPILER} ${MYINCLUDES}  $^ -L${LIBMYGL_PATH}/lib -lmygl ${LIBDNSTD_PATH}/lib/libdnstd.a  -o ray_trace_ellipse${SUFFIX}
 
 flatten: flattenmain.cpp flatten.o planeinstantiations.o DStackinstantiations.o 
-	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o flatten${SUFFIX}
+	${COMPILER} ${MYINCLUDES} $^ -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -ldnstd -o flatten${SUFFIX}
 
 utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o planeinstantiations.o DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  ${LIBMYFFT_PATH}/libmyfft.a -o utilities${SUFFIX}
+	${COMPILER} ${MYINCLUDES} $^ -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -ldnstd  -lfftw3 -lm -o utilities${SUFFIX}
 
 mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o planeinstantiations.o DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}

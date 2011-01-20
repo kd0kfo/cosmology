@@ -1,4 +1,4 @@
-#include "DArray.cpp"
-#include "DString.h"
+#include "libdnstd/DArray.h"
+#include "libdnstd/DString.h"
 
 template class utils::DArray<DString>;

@@ -21,38 +21,15 @@
 #include <time.h>
 #endif
 
-#ifndef DSTRING_CPP
-#include "DString.h"
-#endif 
+#include "libdnstd/DString.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DRandom.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/StringTokenizer.h"
 
-#ifndef DOUBLE_CPP
-#include "Double.h"
-#endif
-
-#ifndef DRANDOM_CPP
-#include "DRandom.h"
-#endif
-
-
-#include "glellipse.h"
-
-#ifndef COMPLEX_CPP
-#include "Complex.cpp"
-#endif
-
-
-#ifndef DENSITYPROFILE_CPP
-#include "densityprofile.h"
-#endif/**/
-
-#ifndef STRINGTOKENIZER_CPP
-#include "StringTokenizer.h"
-#endif
-
-#ifndef PLANECREATOR_CPP
-#include "planecreator.cpp"
-#endif
-
+#include "libmygl/glellipse.h"
+#include "libmygl/densityprofile.h"
+#include "libmygl/planecreator.h"
 
 #ifndef _WIN32
 #include <cstdio>

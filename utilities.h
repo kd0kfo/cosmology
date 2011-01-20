@@ -3,18 +3,18 @@
 
 #include <iostream>
 #include <fstream>
-#include <time.h>
-#include <math.h>
+#include <ctime>
+#include <cmath>
 
-#include "DavidException.h"
-#include "DString.h"
-#include "StringTokenizer.h"
-#include "Double.h"
-#include "plane.h"
-#include "DStack.cpp"
+#include "libdnstd/DavidException.h"
+#include "libdnstd/DString.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DStack.h"
 
-#include "Cosmology.h"
-#include "shearimage.h"
+#include "libmygl/plane.h"
+#include "libmygl/Cosmology.h"
+#include "libmygl/shearimage.h"
 
 #include "Functions.h"
 #include "Rainbow.h"

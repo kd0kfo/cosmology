@@ -5,15 +5,17 @@
 #include <fstream>
 #include <time.h>
 #include <math.h>
-#include "DavidException.h"
-#include "DString.h"
-#include "StringTokenizer.h"
-#include "Double.h"
-#include "planecreator.h"
-#include "DStack.h"
+
+#include "libdnstd/DavidException.h"
+#include "libdnstd/DString.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/DStack.h"
+
+#include "libmygl/planecreator.h"
 
 #ifndef __USE_BOINC__
-#include "EasyBMP.h"
+#include "EasyBMP/EasyBMP.h"
 #include "mydaemon.cpp"
 #define DAEMON_NAME "flatten"
 #endif
