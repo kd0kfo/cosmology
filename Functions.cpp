@@ -1,15 +1,15 @@
 #include "Functions.h"
 
 
-utils::DArray<DString> * Functions::getFunctions()
+std::set<std::string> * Functions::getFunctions()
 {
+  using namespace std;
   FunctionHelp fh;
-  std::vector<DString> junx = fh.getHelp()->getKeys();
-  utils::DArray<DString> * returnMe = new utils::DArray<DString>;
-  int size = junx.size();
-  for(int i = 0; i< size;i++)
-    returnMe->put(junx[i]);
-
+  const map<string, string>* functions = fh.getHelp();
+  set<string> * returnMe = new std::set<string>;
+  map<string,string>::const_iterator function = functions->begin();
+  for(;function != functions->end();function++)
+    returnMe->insert(function->first);
   return returnMe;
 }
 
@@ -27,19 +27,14 @@ Functions::Functions(const DString& functionType)
 bool Functions::isFunction(const DString& bean)
 {
   
-  using utils::DArray;
+  using namespace std;
 
-  bool returnMe = false;
+  bool returnMe;
+  FunctionHelp fh;
+  const map<string, string>* functions = fh.getHelp();
 
-  DArray<DString> * functions = Functions::getFunctions();
+  returnMe = (functions->find(bean) != functions->end());
 
-  for(int i = 0;i<functions->size();i++)
-    if(functions->get(i).equals(bean))
-      returnMe = true;
-  
-
-  delete functions;
-  functions = 0;
   return returnMe;
 }
 
@@ -53,7 +48,7 @@ bool Functions::isFunction(const DString& bean)
      * @return LTree result
      * @throws DavidException
      */
-DString Functions::doFunction(const DString& bean_, DString * parameters, int numberOfParameters,double * gparameters, int numberOfGparameters, DHashMap<Plane<Double> > * storedStuff, DString * currentDirectory)
+DString Functions::doFunction(const DString& bean_, DString * parameters, int numberOfParameters,double * gparameters, int numberOfGparameters, std::map<std::string,plane_t> * storedStuff, DString * currentDirectory)
 {
   DString returnMe("Result: ");
   DString bean = bean_;
@@ -87,7 +82,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("shear"))
     {
-      if(storedStuff->getNumberOfKeys() < 2 || numberOfParameters < 3)
+      if(storedStuff->size() < 2 || numberOfParameters < 3)
 	throw DavidException("I need a convergence, a kernel and an output name.");
       DString * currentParameters = new DString[4];
       currentParameters[0] = parameters[0];currentParameters[1] = "1";currentParameters[2] = parameters[0] + "-transform";currentParameters[3] = "fourier";
@@ -116,7 +111,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       returnMe += doFunction(currentParameters[3],currentParameters,3,0,0,storedStuff,currentDirectory);
       
       for(int newParam = 0;newParam < 3;newParam++)
-	storedStuff->removeKey(parameters[newParam] + "-transform");//remove transform. Maybe add away to keep them if needed, eg keep transform boolean boolean
+	storedStuff->erase(parameters[newParam] + "-transform");//remove transform. Maybe add away to keep them if needed, eg keep transform boolean boolean
       
       //done calculating shear
       delete [] currentParameters;currentParameters = 0;
@@ -124,7 +119,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("fixdiag"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+      if(storedStuff->size() < 1 || numberOfParameters < 1)
 	throw DavidException("One Plane and two Parameters are needed");
 
       DString plane = parameters[0];
@@ -132,13 +127,13 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters >= 2 && parameters[1] != "")
 	newPlane = parameters[1];
 
-      if(!storedStuff->contains(plane))
+      if(storedStuff->find(plane) == storedStuff->end())
 	throw DavidException(plane + " was not found.", DavidException::INVALID_ARGUMENT_ERROR_CODE);
       
       int oldRows, oldColumns;
 
-      Plane<Double> * oldPlane = new Plane<Double>(storedStuff->get(plane));
-      Plane<Double> * newGuy = new Plane<Double>(oldRows = oldPlane->numberOfRows(),oldColumns = oldPlane->numberOfColumns(),0.0);
+      plane_t * oldPlane = new plane_t((*storedStuff)[plane]);
+      plane_t * newGuy = new plane_t(oldRows = oldPlane->numberOfRows(),oldColumns = oldPlane->numberOfColumns(),0.0);
       
       for(int i = 0;i<oldRows;i++)
 	for(int j = 0;j<oldColumns;j++)
@@ -151,10 +146,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 
       
 
-      if(storedStuff->contains(newPlane))
-	storedStuff->remove(newPlane);
-      
-      storedStuff->put(newPlane, *newGuy);
+      (*storedStuff)[newPlane] = *newGuy;
       
       delete oldPlane;
       delete newGuy;
@@ -191,12 +183,9 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       Double rows(parameters[1]);
       Double columns(parameters[2]);
 
-      Plane<Double> newGuy(rows.toInt(),columns.toInt(),value);
+      plane_t newGuy(rows.toInt(),columns.toInt(),value);
       
-      if(storedStuff->contains(parameters[0]))
-	storedStuff->remove(parameters[0]);
-
-      storedStuff->put(parameters[0],newGuy);
+      (*storedStuff)[parameters[0]] = newGuy;
       
       returnMe = DString("A new plane was saved as ")+parameters[0];
        
@@ -206,12 +195,12 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters < 2)
 	throw DavidException("I need to know the name of the plane and file");
       
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0]+" was not found.");
       
-      Plane<Double> original = storedStuff->get(parameters[0]);
+      plane_t original = (*storedStuff)[parameters[0]];
       
-      Plane<Double> drawMe(original.numberOfRows(),original.numberOfColumns(),0.0);
+      plane_t drawMe(original.numberOfRows(),original.numberOfColumns(),0.0);
       
       Double color(255);
 
@@ -227,8 +216,8 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	    if(a != 0 || e != 0)
 	      {
 		Utilities u;
-		Plane<Double> * buffer = u.drawEllipse(1,0,a,e,angle,i-rows/2,j-columns/2,color,rows,columns);
-		Plane<Double> * otherBuffer = Plane<Double>::addPlanes(&drawMe,buffer);
+		plane_t * buffer = u.drawEllipse(1,0,a,e,angle,i-rows/2,j-columns/2,color,rows,columns);
+		plane_t * otherBuffer = plane_t::addPlanes(&drawMe,buffer);
 		drawMe = *otherBuffer;
 		
 		delete buffer;
@@ -237,10 +226,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	      }
 	  }
       
-      if(storedStuff->contains(parameters[1]))
-	storedStuff->remove(parameters[1]);
-      
-      storedStuff->put(parameters[1],drawMe);
+					(*storedStuff)[parameters[1]] = drawMe;
 
       returnMe = DString("The images of ") + parameters[0] + DString(" was saved as ") + parameters[1];
 
@@ -250,7 +236,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters < 2)
 	throw DavidException("I need to know the name of the matrix and the operation to perform");
       
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found");
       
       if(!parameters[1].equals("transpose") && !parameters[1].equals("horizontal") && !parameters[1].equals("vertical"))
@@ -258,8 +244,8 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	 
       DString toDo = parameters[1];
 
-      Plane<Double> original = storedStuff->get(parameters[0]);
-      Plane<Double> * newPlane = 0;
+      plane_t original = (*storedStuff)[parameters[0]];
+      plane_t * newPlane = 0;
       int rows = original.numberOfRows();
       int columns = original.numberOfColumns();
       Double curr;
@@ -268,7 +254,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	newPlane = original.transpose();
       else if(toDo.equals("horizontal"))
 	{
-	  newPlane = new Plane<Double>(rows,columns,0.0);
+	  newPlane = new plane_t(rows,columns,0.0);
 	  for(int i = 0;i<rows;i++)
 	    for(int j = 0;j<columns;j++)
 	      {
@@ -278,7 +264,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	}
       else if(toDo.equals("vertical"))
 	{
-	  newPlane = new Plane<Double>(rows,columns,0.0);
+	  newPlane = new plane_t(rows,columns,0.0);
 	  for(int i = 0;i<rows;i++)
 	    for(int j = 0;j<columns;j++)
 	      {
@@ -296,10 +282,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters >= 3)
 	newPlaneName = parameters[2];
       
-      if(storedStuff->contains(newPlaneName))
-	storedStuff->remove(newPlaneName);
-      
-      storedStuff->put(newPlaneName,*newPlane);
+					(*storedStuff)[newPlaneName] = *newPlane;
       
       delete newPlane;
       
@@ -311,7 +294,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters < 4)
 	throw DavidException("I need to know the name of the plane and ellipse information.");
 
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found.");
       
       Double row(parameters[1]);
@@ -323,7 +306,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	e = Double(parameters[4]);
       
 
-      Plane<Double> original = storedStuff->get(parameters[0]);
+      plane_t original = (*storedStuff)[parameters[0]];
       
       if(row < 0 || row >= original.numberOfRows())
 	throw DavidException("That point is out of bounds.");
@@ -334,33 +317,31 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 
       original.setValue(row.intValue(),column.intValue(), newValue);
       
-      storedStuff->remove(parameters[0]);
-      storedStuff->put(parameters[0],original);
+      (*storedStuff)[parameters[0]] = original;
       
       returnMe = DString("An ellipse was added to ") + parameters[0] + DString(" at (") + row.toDString() + DString(", ") + column.toDString() + ")";
 
     }
   else if(bean.equals("fourier"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 3)
+      if(storedStuff->size() < 1 || numberOfParameters < 3)
 	throw DavidException("One Plane and two Parameters are needed");
 
       DString data = parameters[0];
       Double fourierdirection(parameters[1]);//1 for fourier, -1 for inverse
       DString result = parameters[2];
 
-      Plane<Double> * dPlane = new Plane<Double>(storedStuff->get(data));
+      plane_t * dPlane = &(*storedStuff)[data];
       
       std::complex<double> * junx = PlaneToComplexArray(dPlane);
 
-      unsigned long * nn = new unsigned long[2];
+      int * nn = new int[2];
       nn[0] = dPlane->numberOfRows();
       nn[1] = dPlane->numberOfColumns();
 
       if((nn[0] & (nn[0]  - 1)) != 0 || (nn[1] & (nn[1] - 1)) != 0)
 	{
-	  delete dPlane;
-	  delete [] junx;
+	  delete junx;
 	  delete [] nn;
 	  
 	  throw DavidException("The dimensions supplied to the FFT must be a power of 2.");
@@ -377,13 +358,9 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(fourierdirection == -1)
 	normconst = nn[0]*nn[1];
 
-      delete dPlane;
       dPlane = ComplexArrayToPlane(junx,nn[0],nn[1], normconst);
       
-      if(storedStuff->isKey(result))
-	storedStuff->removeKey(result);
-      
-      storedStuff->put(result, *dPlane);
+      (*storedStuff)[result] = *dPlane;
 
       delete dPlane;
       delete [] junx;
@@ -401,21 +378,17 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("header"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+      if(storedStuff->size() == 0 || numberOfParameters < 1)
 	throw DavidException("I need a plane");
 
-      if(!storedStuff->containsKey(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(DString("I cannot find ") + parameters[0]);
 
-      Plane<Double> editedPlane(storedStuff->get(parameters[0]));
+      plane_t& editedPlane = (*storedStuff)[parameters[0]];
       
       if(numberOfParameters > 1)
 	{
 	  editedPlane.setHeader(parameters[1]);
-
-	  storedStuff->remove(parameters[0]);
-	  storedStuff->put(parameters[0],editedPlane);
-      
 	  returnMe = DString("The header for ") + parameters[0] + DString(" now is \"") + parameters[1] + "\"";      
 	}
       else
@@ -440,8 +413,8 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(!storedStuff->containsKey(parameters[1]))
 	throw DavidException(parameters[1] + " could not be found.");
 
-      Plane<Double> * left = new Plane<Double>(storedStuff->get(parameters[0]));
-      Plane<Double> * right = new Plane<Double>(storedStuff->get(parameters[1]));
+      plane * left = new plane(storedStuff->get(parameters[0]));
+      plane * right = new plane(storedStuff->get(parameters[1]));
 
       if(left->numberOfRows() != right->numberOfRows() && left->numberOfColumns() != right->numberOfColumns())
 	{
@@ -476,7 +449,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 
       FFT::ndim_discrete(convolve-1,nn-1,2,-1);
 
-      Plane<Double> * result = ComplexArrayToPlane(convolve,nn[0],nn[1]);
+      plane_t * result = ComplexArrayToPlane(convolve,nn[0],nn[1]);
       int norm = nn[0] * nn[1];
       for(int i = 0;i<nn[0];i++)
 	for(int j =0;j<nn[1];j++)
@@ -506,13 +479,13 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("sum"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+      if(storedStuff->size() == 0 || numberOfParameters < 1)
 	throw DavidException("I need to know what to sum :-/ ");
 
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " does not exist.");
 
-      const Plane<Double> sumMe = storedStuff->get(parameters[0]);
+      const plane_t& sumMe = (*storedStuff)[parameters[0]];
       Double sum = 0;
       int * ndims = sumMe.getDimensions();
       
@@ -527,63 +500,57 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("directproduct"))
     {
-      if(storedStuff->getNumberOfKeys() < 2 || numberOfParameters < 3)
+      if(storedStuff->size() < 2 || numberOfParameters < 3)
 	throw DavidException("I need 2 planes and the name to be given to the product.");
 
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found");
 
-      if(!storedStuff->contains(parameters[1]))
+      if(storedStuff->find(parameters[1]) == storedStuff->end())
 	throw DavidException(parameters[1] + " was not found");
 
-      Plane<Double> * left = new Plane<Double>(storedStuff->get(parameters[0]));
-      Plane<Double> * right = new Plane<Double>(storedStuff->get(parameters[1]));
+      const plane_t * left = &(*storedStuff)[parameters[0]];
+      const plane_t * right = &(*storedStuff)[parameters[1]];
       
-      Plane<Double> * product;
+      plane_t * product = 0;
       try
 	{
+	  std::cerr << "functions.cpp:519 inefficient. should replace with operating on a plane rather than returning one, which is then copied." << std::endl;
 	  product = directProduct(left,right);
 	}
       catch(DavidException de)
 	{
-	  delete left;
-	  delete right;
-	  delete product;
-	  
+	  if(product != 0)
+	    delete product;
 	  throw de;//dying gracefully
 	}
        
-      if(storedStuff->contains(parameters[2]))
-	storedStuff->removeKey(parameters[2]);
-      
-      storedStuff->put(parameters[2],*product);
-
-      delete left;
-      delete right;
-      delete product;
+      (*storedStuff)[parameters[2]] = *product;
+      if(product)
+	delete product;
 
       returnMe = DString("The direct product of ") + parameters[0] + DString(" and ") + parameters[1] + DString(" was saved as ") + parameters[2];
     }
   else if(bean.equals("multiply"))
     {
-      if(storedStuff->getNumberOfKeys() < 2 || numberOfParameters < 3)
+      if(storedStuff->size() < 2 || numberOfParameters < 3)
 	throw DavidException("I need 2 planes and the name to be given to the product.");
       
       DString A = parameters[0];
       DString B = parameters[1];
       DString Product = parameters[2];
 
-      if(!storedStuff->isKey(A))
+      if(storedStuff->find(A) == storedStuff->end())
 	throw DavidException(A + " could not be found.");
       
-      if(!storedStuff->isKey(B))
+      if(storedStuff->find(B) == storedStuff->end())
 	throw DavidException(B + " could not be found.");
 
 
-      DEBUG_PRINT(DString("Loading ") + A);
-      Plane<Double> a = storedStuff->get(A);
-      DEBUG_PRINT(DString("Loading ") + B);
-      Plane<Double> b = storedStuff->get(B);
+      DEBUG_PRINT("Loading " << A);
+      const plane_t& a = (*storedStuff)[A];
+      DEBUG_PRINT("Loading " << B);
+      const plane_t& b = (*storedStuff)[B];
 
       if(b.numberOfRows() != a.numberOfColumns())
 	{
@@ -593,13 +560,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       DEBUG_PRINT("Multiplying...");
       std::vector<Double> c = Functions::matrixMultiply(a.getPlaneArray(),b.getPlaneArray(),a.numberOfRows(),b.numberOfRows(), b.numberOfColumns());
 
-      Plane<Double> product(c,a.numberOfRows(),b.numberOfColumns());
+      plane_t product(c,a.numberOfRows(),b.numberOfColumns());
 
 
-      if(storedStuff->isKey(Product))
-	storedStuff->removeKey(Product);
-      
-      storedStuff->put(Product,product);
+      (*storedStuff)[Product] = product;
 
       returnMe = DString("The product of ") + A + DString(" and ") + B + DString(" has been saved as ") + Product;
 
@@ -607,44 +571,37 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("add"))
     {
-      if(storedStuff->getNumberOfKeys() < 2 || numberOfParameters < 3)
+      if(storedStuff->size() < 2 || numberOfParameters < 3)
 	throw DavidException("I need 2 planes and the name to be given to the sum.");
       
       DString A = parameters[0];
       DString B = parameters[1];
       DString sumString = parameters[2];
 
-      if(!storedStuff->isKey(A))
+      if(storedStuff->find(A) == storedStuff->end())
 	throw DavidException(A + " could not be found.");
       
-      if(!storedStuff->isKey(B))
+      if(storedStuff->find(B) == storedStuff->end())
 	throw DavidException(B + " could not be found.");
 
 
-      DEBUG_PRINT(DString("Loading ") + A);
-      Plane<Double> * a = new Plane<Double>(storedStuff->get(A));
-      DEBUG_PRINT(DString("Loading ") + B);
-      Plane<Double> * b = new Plane<Double>(storedStuff->get(B));
+      DEBUG_PRINT("Loading " << A);
+      const plane_t * a = &(*storedStuff)[A];
+      DEBUG_PRINT("Loading " << B);
+      const plane_t * b = &(*storedStuff)[B];
 
       if(b->numberOfRows() != a->numberOfRows() && b->numberOfColumns() != a->numberOfColumns())
 	{
-	  delete a;
-	  delete b;
 	  throw DavidException(DString("The dimensions of ") + A + DString(" must equal the dimensions of ") + B);
 	}
 
       VERBOSE_PRINT("Adding...");
       std::vector<Double> c = Functions::addMatrices(a->getPlaneArray(), b->getPlaneArray(),a->numberOfRows(),a->numberOfColumns());
 
-      Plane<Double> * sum  = new Plane<Double>(c,a->numberOfRows(),b->numberOfColumns());
-
-
-      if(storedStuff->isKey(sumString))
-	storedStuff->removeKey(sumString);
+      DEBUG_PRINT("Functions.cpp:602 inefficient: don't create it on the heap, then copy it somewhere else :-/");
+      plane_t * sum  = new plane_t(c,a->numberOfRows(),b->numberOfColumns());
       
-      storedStuff->put(sumString,*sum);
-      delete a;
-      delete b;
+      (*storedStuff)[sumString] = *sum;
       delete sum;
       a = b = sum = 0;
 
@@ -654,10 +611,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("modulus"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+      if(storedStuff->size() < 1 || numberOfParameters < 1)
 	throw DavidException("I need a plane.");
 
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found.");
 
       DString saveName = parameters[0];
@@ -666,7 +623,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	saveName = parameters[1];
 
       using math::Complex;
-      Plane<Complex> * hmmm = convertDoublePlaneToComplexPlane(&(storedStuff->get(parameters[0])));
+      Plane<Complex> * hmmm = convertDoublePlaneToComplexPlane(&(*storedStuff)[parameters[0]]);
 
       for(int i = 0;i<hmmm->numberOfRows();i++)
 	for(int j = 0;j<hmmm->numberOfColumns();j++)
@@ -675,12 +632,9 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	    hmmm->setValue(i,j,curr);
 	  }
 
-      Plane<Double> * gimmy = convertComplexPlaneToDoublePlane(hmmm);
+      plane_t * gimmy = convertComplexPlaneToDoublePlane(hmmm);
 
-      if(storedStuff->contains(saveName))
-	storedStuff->remove(saveName);
-
-      storedStuff->put(saveName,*gimmy);
+      (*storedStuff)[saveName] = *gimmy;
 
       delete gimmy;
       delete hmmm;
@@ -692,24 +646,24 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("extract"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 3)
+      if(storedStuff->size() < 1 || numberOfParameters < 3)
 	throw DavidException("I need a plane and I need to know what to do with the plane.");
 
       DString plane = parameters[1];
       DString saveAs = parameters[numberOfParameters-1];
       
-      if(!storedStuff->contains(plane))
+      if(storedStuff->find(plane) == storedStuff->end())
 	throw DavidException(plane + " was not found.");
 
-      Plane<Double> verytmpPlane = storedStuff->get(plane);
+      plane_t verytmpPlane = (*storedStuff)[plane];
       Plane<math::Complex> * tmpPlane = convertDoublePlaneToComplexPlane(&verytmpPlane);
       Plane<math::Complex> * finalResult;
       
-      utils::DArray<DString> doThis;
+      std::vector<DString> doThis;
       
       for(int i = 0;i<numberOfParameters-1;i++)
 	if(i != 1)
-	  doThis.put(parameters[i]);
+	  doThis.push_back(parameters[i]);
 
       try
 	{
@@ -722,14 +676,8 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	  throw de;
 	}
 
-
-	  
-      if(storedStuff->contains(saveAs))
-	storedStuff->remove(saveAs);
-      
-      Plane<Double> * veryfinalResult = convertComplexPlaneToDoublePlane(finalResult);
-  
-      storedStuff->put(saveAs, *veryfinalResult);
+      plane_t * veryfinalResult = convertComplexPlaneToDoublePlane(finalResult);
+      (*storedStuff)[saveAs] = *veryfinalResult;
       
       delete veryfinalResult;
       delete finalResult;
@@ -738,16 +686,16 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       finalResult = 0;
       veryfinalResult = 0;
       
-      returnMe = doThis.get(0) + DString(" was obtained from " ) + plane + DString(" and saved as ") + saveAs;
+      returnMe = doThis.at(0) + DString(" was obtained from " ) + plane + DString(" and saved as ") + saveAs;
 
 
     }
   else if(bean.equals("bitmap"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 2)
+      if(storedStuff->size() < 1 || numberOfParameters < 2)
 	throw DavidException("I need a plane to save as a bitmap and the name of the bitmap file.");
 
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found.");
 
       bool useBinary = false;
@@ -780,13 +728,13 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(!useBinary)
 	{
 	  if(!useWhiteBackground)
-	    storedStuff->get(parameters[0]).draw(parameters[1]);
+	    (*storedStuff)[parameters[0]].draw(parameters[1]);
 	  else
-	    storedStuff->get(parameters[0]).draw(parameters[1],false,false,1000,255,255,255);
+	    (*storedStuff)[parameters[0]].draw(parameters[1],false,false,1000,255,255,255);
 	}
       else
 	{
-	  Plane<Double> poop(storedStuff->get(parameters[0]));
+	  plane_t& poop = (*storedStuff)[parameters[0]];
 	  Double red(255,0.0,0.0);
 	  for(int i = 0;i<poop.numberOfRows();i++)
 	    for(int j = 0;j<poop.numberOfColumns();j++)
@@ -823,10 +771,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("count"))
     {
-       if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+       if(storedStuff->size() < 1 || numberOfParameters < 1)
 	 throw DavidException("I need a plane.");
       
-       Plane<Double> stuff(storedStuff->get(parameters[0]));
+       plane_t& stuff = (*storedStuff)[parameters[0]];
        
 
        double totalCount = 0;
@@ -841,7 +789,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("max") || bean.equals("min"))
     {
-       if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+       if(storedStuff->size() < 1 || numberOfParameters < 1)
 	 throw DavidException("I need a plane.");
        
        bool findMax = bean.equals("max");
@@ -852,7 +800,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
        double * coords2 = new double[2];
        coords[0] = coords[1] = 0.0;
 
-       Plane<Double> stuff(storedStuff->get(parameters[0]));
+       plane_t& stuff = (*storedStuff)[parameters[0]];
        int rows = stuff.numberOfRows();
        int columns = stuff.numberOfColumns();
        for(int i = 0;i<rows;i++)
@@ -907,10 +855,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("normalize"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 2)
+      if(storedStuff->size() < 1 || numberOfParameters < 2)
 	throw DavidException("I need a plane and a number");
       
-      Plane<Double> plane(storedStuff->get(parameters[0]));
+      plane_t& plane = (*storedStuff)[parameters[0]];
       
       double norm = Double(parameters[1]).doubleValue();
       int rows = plane.numberOfRows();
@@ -925,38 +873,33 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	    plane.setValue(i,j,curr);
 	  }
       
-      storedStuff->removeKey(parameters[0]);
-      storedStuff->put(parameters[0],plane);
+      (*storedStuff)[parameters[0]] = plane;
       
       returnMe = DString("Every value in ") + parameters[0] + DString(" was divided by ") + parameters[1];
     }
   else if(bean.equals("squareplane"))
     {
-      if(storedStuff->getNumberOfKeys() < 1 || numberOfParameters < 1)
+      if(storedStuff->size() < 1 || numberOfParameters < 1)
 	throw DavidException("I need a plane.");
       
-      Plane<Double> * plane = new Plane<Double>(storedStuff->get(parameters[0]));
+      plane_t * plane = &(*storedStuff)[parameters[0]];
       
       int size = -1;
       if(numberOfParameters >= 2)
 	size = (int) Double(parameters[1]).doubleValue();
-      Plane<Double> * newGuy = Functions::squarePlane(plane,size);
+      plane_t * newGuy = Functions::squarePlane(plane,size);
 
-      storedStuff->removeKey(parameters[0]);
-      storedStuff->put(parameters[0],*newGuy);
+      (*storedStuff)[parameters[0]] = *newGuy;
 
       returnMe = parameters[0] + DString(" now has the dimensions ") + Double(newGuy->numberOfRows()).toDString() + DString(" by ") + Double(newGuy->numberOfColumns()).toDString() + ".";
 
-      delete plane;
       delete newGuy;
       plane = newGuy = 0;
       
     }
   else if(bean.equals("flatten"))
     {
-
       using utils::DStack;
-
       if( numberOfParameters < 4)
 	throw DavidException("I need to know the file of the cube, resolution, line of sight (0-2) and the variable name (time in seconds is an optional parameter).");
       
@@ -976,7 +919,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 
       Plane<utils::DStack<Double> > * plane = f.parseClusterFile(filename, resolution);
 
-      Plane<Double> Dplane(plane->numberOfRows(),plane->numberOfColumns(),0.0);
+      plane_t Dplane(plane->numberOfRows(),plane->numberOfColumns(),0.0);
 
       int rows = Dplane.numberOfRows();
       int columns = Dplane.numberOfColumns();
@@ -1004,10 +947,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	    Dplane.setValue(i,j,curr);
 	  }
 
-      if(storedStuff->isKey(name))
-	storedStuff->removeKey(name);
-
-      storedStuff->put(name,Dplane);
+      (*storedStuff)[name] = Dplane;
             
       delete plane;
       plane = 0;
@@ -1015,10 +955,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
     }
   else if(bean.equals("histogram"))
     {
-      if(numberOfParameters < 2 || storedStuff->getNumberOfKeys() < 1)
+      if(numberOfParameters < 2 || storedStuff->size() < 1)
 	throw DavidException("I need at least 1 variable and a filename.");
 
-      Plane<Double> * histoMe = new Plane<Double>(storedStuff->get(parameters[0]));
+      const plane_t * histoMe = &(*storedStuff)[parameters[0]];
 
       double bins = 10;
       int scale = 0;
@@ -1107,17 +1047,15 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	returnMe += " A colorbar lengend was added.";
 
       delete [] colorBarDimensions;
-      delete histoMe;
-      histoMe = 0;
       colorBarDimensions = 0;
     }
   else if(bean.equals("plotable"))
     {
-      if(numberOfParameters < 2 || storedStuff->getNumberOfKeys() < 1)
+      if(numberOfParameters < 2 || storedStuff->size() < 1)
 	throw DavidException("I need at least 2 variables, one of which is a stored plane.");
 
       
-      Plane<Double> * printMe = new Plane<Double>(storedStuff->get(parameters[0]));
+      const plane_t * printMe = &(*storedStuff)[parameters[0]];
       bool writeParam = Functions::PARAMETER_USE_SM;
       
       if(numberOfParameters >= 3)
@@ -1130,8 +1068,6 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(writeParam == Functions::PARAMETER_FLIP_COORDINATES)
 	returnMe += " and the coordinates were flipped.";
       
-      delete printMe;
-      printMe = 0;
       
     }
   else if(bean.equals("floor"))
@@ -1139,10 +1075,10 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters < 2 || storedStuff->size() < 1)
 	throw DavidException("I need at least a plane and a number");
       
-      if(!storedStuff->containsKey(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found.");
       
-      Plane<Double> * plane = &storedStuff->get(parameters[0]);//Sei Vorsichtig!
+      const plane_t * plane = &(*storedStuff)[parameters[0]];
       Double DFloor(parameters[1]);
 
       bool inverseFloor = false;
@@ -1158,10 +1094,9 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	  inverseFloor = inverseFloor || parameters[3].equals("--inverse");
 	}
 
-      Plane<Double> * newplane = floorMe(plane,DFloor.doubleValue(),useAbs,inverseFloor);
+      plane_t * newplane = floorMe(plane,DFloor.doubleValue(),useAbs,inverseFloor);
       
-      storedStuff->remove(parameters[0]);
-      storedStuff->put(parameters[0],*newplane);
+      (*storedStuff)[parameters[0]] = *newplane;
       
       delete newplane;
       newplane = 0;
@@ -1174,7 +1109,7 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
       if(numberOfParameters < 1 || storedStuff->size() < 1)
 	throw DavidException("I need the name of the matrix to take the conjuage of");
       
-      if(!storedStuff->contains(parameters[0]))
+      if(storedStuff->find(parameters[0]) == storedStuff->end())
 	throw DavidException(parameters[0] + " was not found.");
 
       DString newGuy = parameters[0];
@@ -1183,16 +1118,13 @@ DString Functions::doFunction(const DString& bean_, DString * parameters, int nu
 	newGuy = parameters[1];
 
       using math::Complex;
-      Plane<Double> stuffedStuff = storedStuff->get(parameters[0]);
+      const plane_t& stuffedStuff = (*storedStuff)[parameters[0]];
       Plane<Complex> * original = convertDoublePlaneToComplexPlane(&stuffedStuff);
 
       Plane<Complex> * newPlane = complexConjugate(original);
-      Plane<Double> * saveMe = convertComplexPlaneToDoublePlane(newPlane);
+      plane_t * saveMe = convertComplexPlaneToDoublePlane(newPlane);
 
-      if(storedStuff->contains(newGuy))
-	storedStuff->remove(newGuy);
-      
-      storedStuff->put(newGuy,*saveMe);
+      (*storedStuff)[newGuy] = *saveMe;
       
 
       delete original;
@@ -1274,27 +1206,23 @@ return returnMe;
 	
 DString Functions::listFunctions()    
 {
-  using utils::DArray;
-  DArray<DString> * list = Functions::getFunctions();	
-
-  DString * junx = list->getArray();
+  using namespace std;
   
-  //DString::alphabetize(junx,list->size());
+  FunctionHelp fh;
+  map<string,string> * functions = fh.getHelp();
+  map<string,string>::const_iterator function = functions->begin();
 
   DString returnMe = "";
   DString space = " ";
-  for(int i = 0;i<list->size();i++)
-    returnMe += space+junx[i];
+  for(;function != functions->end();function++)
+    returnMe += space+function->first;
 
-  delete list;
-  delete [] junx;
-  junx = 0;
-  list = 0;
   return returnMe;
 }
 
 DString Functions::getHelp(const DString& bean)
 {
+  using namespace std;
   if(bean == "list")
     {
       DString returnMe("List of functions: ");
@@ -1304,17 +1232,15 @@ DString Functions::getHelp(const DString& bean)
   if(!isFunction(bean))
     return "No such function.";
   FunctionHelp fh;
-  DHashMap<DString> * hm = fh.getHelp();//do not delete will be deleted by ~fh
-  if(!(hm->containsKey(bean)))
-    {
-      return DString("No help for ")+bean;
-    }
-  DString returnMe = hm->get(bean);
-  return returnMe;
+  map<string,string> * hm = fh.getHelp();//do not delete will be deleted by ~fh
+  if(hm->find(bean) == hm->end())
+    return DString("No help for ")+bean;
+
+  return (*hm)[bean];
 }
 
 
-std::complex<double> * Functions::PlaneToComplexArray(Plane<Double> * dPlane)
+std::complex<double> * Functions::PlaneToComplexArray(plane_t * dPlane)
 {
 
   int rows = dPlane->numberOfRows();
@@ -1333,10 +1259,10 @@ std::complex<double> * Functions::PlaneToComplexArray(Plane<Double> * dPlane)
 }
 
 
-  Plane<Double> *  Functions::ComplexArrayToPlane(std::complex<double> * cPlane, int rows, int columns, double norm)
+  plane_t *  Functions::ComplexArrayToPlane(std::complex<double> * cPlane, int rows, int columns, double norm)
 {
 
-  Plane<Double> * dPlane = new Plane<Double>(rows,columns, 0.0);
+  plane_t * dPlane = new plane_t(rows,columns, 0.0);
   int counter = 0;
   for(int i = 0;i<rows;i++)
     for(int j = 0;j<columns;j++)
@@ -1373,7 +1299,7 @@ std::vector<Double> Functions::matrixMultiply(std::vector<Double> a, std::vector
 
 }
 
-Plane<Double> * Functions::directProduct(Plane<Double> * a, Plane<Double> * b)
+plane_t * Functions::directProduct(const plane_t * a, const plane_t * b)
 {
   
   using math::Complex;
@@ -1384,7 +1310,7 @@ Plane<Double> * Functions::directProduct(Plane<Double> * a, Plane<Double> * b)
   if(I != b->numberOfRows() && J != b->numberOfColumns())
     throw DavidException("The dimensions of both planes must be equal.", DavidException::PLANE_OUT_OF_BOUNDS_ERROR_CODE);
 
-  Plane<Double> * returnMe = new Plane<Double>(I,J,0.0);
+  plane_t * returnMe = new plane_t(I,J,0.0);
 
   for(int i = 0;i<I;i++)
     for(int j = 0;j<J;j++)
@@ -1399,7 +1325,7 @@ Plane<Double> * Functions::directProduct(Plane<Double> * a, Plane<Double> * b)
 }
 
 
-Plane<Double> *  Functions::squarePlane(Plane<Double> * oldPlane, int newWidth)
+plane_t *  Functions::squarePlane(const plane_t * oldPlane, const int& newWidth)
 {
   
   Double cZero(0.0);
@@ -1414,7 +1340,7 @@ Plane<Double> *  Functions::squarePlane(Plane<Double> * oldPlane, int newWidth)
   if(newWidth > 0)
     bounds = newWidth;
 
-  Plane<Double> * newPlane = new Plane<Double>::Plane(bounds,bounds,cZero);
+  plane_t * newPlane = new plane_t(bounds,bounds,cZero);
 
   for(int i = 0;i < oldPlane->numberOfRows();i++)
     for(int j = 0; j < oldPlane->numberOfColumns();j++)
@@ -1427,7 +1353,7 @@ Plane<Double> *  Functions::squarePlane(Plane<Double> * oldPlane, int newWidth)
 }
 
 
-void Functions::writePlotableData(Plane<Double> * plane, DString fileName, int writeParam)
+void Functions::writePlotableData(plane_t * plane, DString fileName, int writeParam)
 {
 
   int rows,columns;
@@ -1498,13 +1424,13 @@ void Functions::writePlotableData(Plane<Double> * plane, DString fileName, int w
 }
 
 
-Plane<Double> * Functions::convertComplexPlaneToDoublePlane(Plane<math::Complex> * oldPlane)
+plane_t * Functions::convertComplexPlaneToDoublePlane(const Plane<math::Complex> * oldPlane)
 {
 
   int rows = oldPlane->numberOfRows();
   int columns = oldPlane->numberOfColumns();
 
-  Plane<Double> * returnMe = new Plane<Double>(rows,columns, 0.0);
+  plane_t * returnMe = new plane_t(rows,columns, 0.0);
 
   for(int i = 0;i<rows;i++)
     for(int j = 0;j<columns;j++)
@@ -1521,7 +1447,7 @@ Plane<Double> * Functions::convertComplexPlaneToDoublePlane(Plane<math::Complex>
 
 }
 
-Plane<math::Complex> * Functions::convertDoublePlaneToComplexPlane(Plane<Double> * oldPlane)
+Plane<math::Complex> * Functions::convertDoublePlaneToComplexPlane(const plane_t * oldPlane)
 {
 
   int rows = oldPlane->numberOfRows();
@@ -1547,14 +1473,14 @@ Plane<math::Complex> * Functions::convertDoublePlaneToComplexPlane(Plane<Double>
   return returnMe;
 }
 
-Plane<Double> * Functions::floorMe(Plane<Double> * original, double floor, bool useAbs, bool inverseFloor)
+plane_t * Functions::floorMe(plane_t * original, double floor, bool useAbs, bool inverseFloor)
 {
 
 
   int rows = original->numberOfRows();
   int columns = original->numberOfColumns();
   
-  Plane<Double> * returnMe = new Plane<Double>(rows,columns,0.0);
+  plane_t * returnMe = new plane_t(rows,columns,0.0);
 
   for(int i = 0;i<rows;i++)
     for(int j = 0; j<columns;j++)
@@ -1656,7 +1582,7 @@ Plane<math::Complex> * Functions::getImaginaryPart(const Plane<math::Complex> * 
 
 }
 
-Plane<math::Complex> * Functions::extractPortion(const Plane<math::Complex> * original, utils::DArray<DString>& parameters) throw (DavidException)
+Plane<math::Complex> * Functions::extractPortion(const Plane<math::Complex> * original, const std::vector<DString>& parameters) throw (DavidException)
 {
 
   if(parameters.size() == 0)
@@ -1664,7 +1590,7 @@ Plane<math::Complex> * Functions::extractPortion(const Plane<math::Complex> * or
   
   Plane<math::Complex> * finalResult = 0;
 
-  DString whatToDo = parameters.get(0);
+  DString whatToDo = parameters.at(0);
 
   if(whatToDo == "real")
     {
@@ -1684,7 +1610,7 @@ Plane<math::Complex> * Functions::extractPortion(const Plane<math::Complex> * or
       
       
       for(int i = 0;i<4;i++)
-	bounds[i] = Double(parameters.get(i+1)).intValue();
+	bounds[i] = Double(parameters.at(i+1)).intValue();
 
       
       if(bounds[0] < 0 || bounds[2] < 0)

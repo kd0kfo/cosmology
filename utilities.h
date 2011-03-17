@@ -10,7 +10,6 @@
 #include "libdnstd/DString.h"
 #include "libdnstd/StringTokenizer.h"
 #include "libdnstd/Double.h"
-#include "libdnstd/DStack.h"
 
 #include "libmygl/plane.h"
 #include "libmygl/Cosmology.h"

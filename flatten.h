@@ -15,7 +15,7 @@
 #include "libmygl/planecreator.h"
 
 #ifndef __USE_BOINC__
-#include "EasyBMP/EasyBMP.h"
+#include "libmygl/EasyBMP/EasyBMP.h"
 #include "mydaemon.cpp"
 #define DAEMON_NAME "flatten"
 #endif
