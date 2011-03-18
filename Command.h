@@ -1,40 +1,51 @@
 #ifndef COMMAND_CPP
 #define COMMAND_CPP
 
-#include "DString.h"
-#include "DArray.h"
-#include "StringTokenizer.h"
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+#include "libdnstd/StringTokenizer.h"
 #include "CommandWords.h"
-#include "Functions.h"
+#include "Help.h"
+
+#ifndef DEBUG_PRINT
+#ifdef __DEBUG__
+#define DEBUG_PRINT(x) std::cout << x << std::endl;
+#else
+#define DEBUG_PRINT(x) ;
+#endif
+#endif
+
+class DavidException;
 
 	class Command
 	{
 		public:
-			Command(const DString&);
+			Command(const arg_t&);
 
-			static DString getVersion(){return (DString) "1.1";}
+			static arg_t getVersion(){return "2.0";}
 
-			DString getCommandWord();
-			DString getSecondWord();
-			bool isUnknown();
-			bool hasSecondWord();
-			utils::DArray<DString>& getWords() const ;
-			DString getWholeCommandString() const{return *words;}
-			static utils::DArray<DString> * Command::load(DString fileName);
-			static void save(const Command& command, DString& fileName, utils::DArray<DString> * output);
+			const arg_t& getCommandWord()const{return commandWord;}
+			const arg_t& getSecondWord()const{return secondWord;}
+			bool isUnknown()const;
+			bool hasSecondWord()const;
+			const args_t& getWords() const{return args;}
+			const arg_t& getWholeCommandString() const{return words;}
 
 			//Calculation methods
-			/*
-			 * Does a calculation and prints the result
-			 */
-			static DString print(const Command& command,double * parameters, int numberOfParameters, DHashMap<Plane<Double> > * storedStuff,DString * currentDirectory);
-            
+			static arg_t print(const Command& command);
+                        static arg_t set(const Command& command);
+                        static args_t load(const arg_t& fileName);
+
 		private:
-			DString * words;
-			DString * commandWord;
-			DString * secondWord;
-			utils::DArray<DString> * args;
+                    static arg_t print(const Command& command,std::string (*)(const Command&));
+			arg_t words;
+			arg_t commandWord;
+			arg_t secondWord;
+                        args_t args;
 	};
 
-#endif 
+        extern std::string print_function(const Command& arg);
 
+#endif

@@ -1,47 +1,24 @@
 #include "CommandWords.h"
 
-	CommandWords::CommandWords()
-	{
-	  validCommands = new utils::DArray<DString>;
-	  validCommands->put("about");
-	  validCommands->put("copy");
-	  validCommands->put("rename");
-	  validCommands->put("history");
-	  validCommands->put("last");
-	  validCommands->put("list");
-	  validCommands->put("load");
-	  validCommands->put("print");
-	  validCommands->put("remove");
-	  validCommands->put("save");
-	  validCommands->put("help");
-	  validCommands->put("exit");
-	  validCommands->put("quit");
-	  validCommands->put("run");
-	  validCommands->put("autosave");
-	}
+bool CommandWords::isCommand(const arg_t& aString)
+{
+    size_t size = this->size();
+    for (size_t i = 0; i < size; i++)
+        if (this->at(i) == aString)
+            return true;
+    return false;
+}
 
-  bool CommandWords::isCommand(DString& aString)
-    {
-        for(ushort i = 0; i < validCommands->size(); i++) 
-            if(validCommands->get(i) == aString)
-                return true;
-		return false;
-    }
+arg_t CommandWords::showAll() {
+    arg_t bean = "";
 
-  DString CommandWords::showAll() 
-    {
-    	DString bean = "";
-	
-	DString * junks = validCommands->getArray();
-	
-	DString::alphabetize(junks,validCommands->size());
-	
-        for(int i = 0; i < validCommands->size(); i++) {
-            bean += DString(" ") + junks[i];
-        }
+    std::set<std::string> sorter;
+    args_t::const_iterator words = this->begin();
+    for(;words != this->end();words++)
+      sorter.insert(*words);
+    std::set<std::string>::const_iterator word = sorter.begin();
+    for(;word != sorter.end();word++)
+      bean += " " + *word;
 
-	delete [] junks;
-	junks = 0;
-        return bean + " and functions";
-    }
-
+    return bean + " and functions";
+}

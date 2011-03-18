@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include "libmygl/plane.h"
 #include <map>
 #include <complex>
 
@@ -17,12 +18,13 @@
 
 #include "libmygl/Cosmology.h"
 #include "libmygl/planecreator.h"
-#include "libmygl/plane.h"
 #include "flatten.h"
 #include "utilities.h"
 
-template class Plane<math::Complex>;
-#define Plane<Double> plane_t;
+#ifndef plane_t
+typedef Plane<Double> plane_t;
+#endif
+
 	class Functions
 	{
 	  

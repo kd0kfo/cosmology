@@ -27,6 +27,7 @@
 #include "libdnstd/Complex.h"
 #include "libdnstd/StringTokenizer.h"
 
+#include "libmygl/plane.h"
 #include "libmygl/glellipse.h"
 #include "libmygl/densityprofile.h"
 #include "libmygl/planecreator.h"
@@ -46,7 +47,7 @@
 #define DAEMON_NAME "ray_trace_ellipse"
 #endif
 
-[template class Plane<math::Complex>;
+template class Plane<math::Complex>;
 
 
 /** \mainpage Documentation of the Main Executables.

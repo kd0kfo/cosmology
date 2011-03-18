@@ -1,4 +1,4 @@
-COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g -fno-implicit-templates
+COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -D__USE_BOINC__
 #COMPILER = c++ -fpermissive -w -D__USE_BOINC__ -D__VERBOSE__ -static
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
@@ -17,14 +17,14 @@ ray_trace_ellipse: ray_trace_ellipse.o DStackinstantiations.o DArrayinstantiatio
 flatten: flattenmain.cpp flatten.o  DStackinstantiations.o 
 	${COMPILER} ${MYINCLUDES} $^ -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -ldnstd -o flatten${SUFFIX}
 
-utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o  DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -L$(FFTW_PATH)/lib -ldnstd  -lfftw3 -lm -o utilities${SUFFIX}
+utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o  Rainbow.o
+	${COMPILER} ${MYINCLUDES} $^ -ldnstd  -lfftw3 -lm -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -L$(FFTW_PATH)/lib -o utilities${SUFFIX}
 
 mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o  DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}
 
-mycosmo:  Functions.o utilities.o Command.o CommandWords.o Parser.cpp  flatten.o  DArrayinstantiations.o  DStackinstantiations.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a ${LIBMYFFT_PATH}/libmyfft.a -o mycosmo${SUFFIX} -L $(FFTW_PATH)/lib -lfftw3 -lm
+mycosmo: mycosmo.cpp  Parser.o Help.o Build.o Command.o CommandWords.o   DArrayinstantiations.o  DStackinstantiations.o  Rainbow.o
+	${COMPILER} ${MYINCLUDES} $^ -L ${LIBMYGL_PATH}/lib -L ${LIBDNSTD_PATH}/lib  -o mycosmo${SUFFIX} -L $(FFTW_PATH)/lib -lmygl -ldnstd -lfftw3  -lm
 
 makecluster: makecluster.cpp create_cluster.o makecluster 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}

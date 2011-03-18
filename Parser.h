@@ -1,59 +1,75 @@
 #ifndef PARSER_CPP
 #define PARSER_CPP
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <string>
+#include <sstream>
+
+#include "Build.h"
 #include "Command.h"
 #include "CommandWords.h"
-#include "Help.cpp"
-#include "Functions.h"
+#include "Help.h"
 
-#include "libdnstd/DArray.h"
+#ifdef USE_READLINE
+#ifdef _READLINE_H_
+#  include "posixstat.h"
+#  include "readline.h"
+#  include "history.h"
+#else
+#  include <sys/stat.h>
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
+#endif /**USE_READLINE**/
 
-#include "libmygl/planecreator.h"
+extern void args_usage();
+class DavidException;
 
-class David{
- public:
-  static void say(const char * bean){ std::cout << bean << std::endl;}
-  static void say(const DString& bean){say(bean.toCharArray());}
-};
-
-class Parser
-{
- public:
+  class Parser
+  {
+  public:
 #ifdef __DEBUG__
-  int DEBUG_COUNTER;
+    int DEBUG_COUNTER;
 #endif
 
-  Parser();
-  ~Parser();
-  int main(utils::DArray<DString> *);
-  int main(int argc, char **args);
-  int main();
-  bool processCommand(Command * command, DString * whatIsSaid);
- private:
-  CommandWords * commands;  // holds all valid command words
-  Help * helper;
-  utils::DArray<DString> * ans;
-  double * parameters;
-  int numberOfParameters;
-  DString * autoSave;
-  DString * currentDirectory;///<The current working directory
-  DHashMap<Plane<Double> > * storedStuff;
-  int commandCount;
-			
-  Command * getCommand();
-  bool processCommand(Command * command);///<Returns True if the program should quit
-  void printHelp();
-  void start();
-  bool openFile(DString fileName);
-  DString getHistoryValue(Command * command);
-  DString getSwapValue(Command * command);
+    Parser();
+    ~Parser();
+    static std::string getVersion(){return Build::getVersion();}
+    /**
+     * Starts the parser.
+     */
+    void start();
 
-};
-            
-#ifndef MASS_TO_SHEAR_CPP
-static void verbosePrint(DString bean){std::cout << bean << std::endl;}
-static void verbosePrint(int bean){std::cout << bean << std::endl;}
+    void setHelp(const Help& newHelp);
+    void main(args_t& arguments);
+    void main(int argc, char **args);
+
+    /**
+     * Same as start()
+     */
+    void main();
+
+    bool processCommand(Command& command, std::string& whatIsSaid);
+    arg_t getHistoryValue(Command& command) const;
+
+    std::string program_name;
+
+  private:
+    CommandWords * commands;  // holds all valid command words
+    Help*  h;
+    arg_t* inputBuffer;
+    args_t* history;
+
+
+    Command * getCommand();
+    bool processCommand(Command& command);
+    void printHelp(arg_t& whatIsSaid);
+    bool openFile(const std::string& fileName);
+
+
+  };
+
 #endif
-
-#endif
-
