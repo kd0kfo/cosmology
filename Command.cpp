@@ -7,26 +7,33 @@
 	*/
 	Command::Command(const arg_t& _words)
 	{
-	  commandWord = "";
-	  secondWord = "";
+	  using namespace grmr;
+	  static size_t num_keys = num_keywords();
 	  this->words = _words;
-	  
+
 	  if(words.size() != 0)
 	    {
 	      utils::StringTokenizer toke(_words);
 	      	while(toke.hasMoreTokens())
 			{
-			  std::string currString = toke.nextToken();
-			  args.push_back(currString);
+			  token_t newToken;
+			  newToken._str = toke.nextToken();
+			  if(newToken._str.size() == 0)
+			    continue;
+			  newToken.type = token_t::VARIABLE;
+			  for(size_t i = 0;i<num_keys;i++)
+			    if(newToken._str == keywords[i])
+			      newToken.type = token_t::KEYWORD;
+			  args.push_back(newToken);
 			}
                 commandWord = *args.begin();
-			if(args.size() >= 2)
-                            secondWord = args.at(1);
+		if(args.size() >= 2)
+		  secondWord = args.at(1);
 	    }
 	  else
 	    {
 	      words += "help me";
-	      commandWord += "help";
+	      commandWord.type = grmr::token_t::KEYWORD;commandWord._str = "help";
 	    }
 	}
   
@@ -36,7 +43,7 @@
     bool Command::isUnknown()const
     {
         CommandWords blah;
-      return !(blah.isCommand(commandWord));
+      return !(blah.isCommand(commandWord._str));
     }
 
     /**
@@ -45,7 +52,7 @@
      */
 	bool Command::hasSecondWord()const
     {
-        return (secondWord.size() > 0);
+        return (secondWord._str.size() > 0);
     }
     
     

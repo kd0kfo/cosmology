@@ -121,13 +121,12 @@ bool Parser::processCommand(Command& command) {
 
 bool Parser::processCommand(Command& command, std::string& whatIsSaid) {
     bool wantToQuit = false;
-    
-    if (command.getCommandWord() != "save"  && command.getCommandWord() != "exit" && command.getCommandWord() != "quit" && command.getCommandWord() != "history")
+    const std::string& commandWord = command.getCommandWord()._str;
+    if (commandWord != "save"  && commandWord != "exit" && commandWord != "quit" && commandWord != "history")
         history->push_back(command.getWholeCommandString());
 
-    std::string commandWord = command.getCommandWord();
     if (commandWord== "help"){
-      whatIsSaid = command.getSecondWord();
+      whatIsSaid = command.getSecondWord()._str;
         printHelp(whatIsSaid);
         std::cout << whatIsSaid << std::endl;
     } else if (commandWord == "version") {
@@ -159,9 +158,9 @@ bool Parser::processCommand(Command& command, std::string& whatIsSaid) {
 arg_t Parser::getHistoryValue(Command& command) const {
 
     size_t historyCount = history->size() - 1;
-    std::istringstream int_buff(command.getCommandWord().substr(1));
+    std::istringstream int_buff(command.getCommandWord()._str.substr(1));
     
-    if (command.getCommandWord().substr(0, 2) != "!!")
+    if (command.getCommandWord()._str.substr(0, 2) != "!!")
     {
 	    int_buff >> historyCount;
     	if(int_buff.fail() || historyCount < 0)
@@ -172,9 +171,9 @@ arg_t Parser::getHistoryValue(Command& command) const {
         throw DavidException("Ummm, that is in the future.");
 
     std::string newCommand = history->at(historyCount);
-    args_t words = command.getWords();
+    std::vector<grmr::token_t> words = command.getWords();
     for (size_t i = 1; i < words.size(); i++)
-        newCommand += " " + words.at(i);
+      newCommand += " " + words.at(i)._str;
     return newCommand;
 
 }

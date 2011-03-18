@@ -42,8 +42,8 @@ vector<string> precompiledCode;
 
 std::string print_function(const Command& arg)
 {
-  std::cout << arg.getCommandWord() << std::endl;
-  return arg.getCommandWord();
+  std::cout << arg.getCommandWord()._str << std::endl;
+  return arg.getCommandWord()._str;
 }
 
 Help makeHelp(){
