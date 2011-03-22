@@ -27,7 +27,7 @@ mycosmo:
 	bison -y -d mycosmo.y
 	flex mycosmo.l
 	gcc -c y.tab.c lex.yy.c
-	gcc -o mycosmo y.tab.o lex.yy.o mycosmo.c
+	gcc -o mycosmo y.tab.o lex.yy.o mycosmo.c -lm
 
 makecluster: makecluster.cpp create_cluster.o makecluster 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}
@@ -36,7 +36,7 @@ nfwshear: nfwshear.cpp
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o nfwshear${SUFFIX}
 
 clean: 
-	rm -f *.o makecluster${SUFFIX}  mycosmo${SUFFIX} mass_to_shear${SUFFIX} utilities${SUFFIX} flatten${SUFFIX} ray_trace_ellipse${SUFFIX}
+	rm -f *.o makecluster${SUFFIX}  mycosmo${SUFFIX} mass_to_shear${SUFFIX} utilities${SUFFIX} flatten${SUFFIX} ray_trace_ellipse${SUFFIX} y.tab.c lex.yy.c 
 
 .cpp.o: %.h
 	${COMPILER} ${MYINCLUDES} -c $< -L$(FFTW_PATH)/include/
