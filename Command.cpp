@@ -5,7 +5,7 @@
 	*
 	* @param words String command supplied.
 	*/
-	Command::Command(const arg_t& _words)
+Command::Command(const arg_t& _words)
 	{
 	  using namespace grmr;
 	  static size_t num_keys = num_keywords();
@@ -17,6 +17,7 @@
 	      	while(toke.hasMoreTokens())
 			{
 			  token_t newToken;
+			  newToken.precedence = 0;
 			  newToken._str = toke.nextToken();
 			  if(newToken._str.size() == 0)
 			    continue;
@@ -88,13 +89,8 @@
     }/**/
 
   
-  arg_t Command::print(const Command& command)
+arg_t Command::print()
   {
-      return Command::print(command,print_function);
-  }
-
-  arg_t Command::print(const Command& command,std::string the_function(const Command&))
-  {
-      return the_function(command.getWholeCommandString());
+    return print_function(*this);
   }
 

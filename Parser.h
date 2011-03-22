@@ -56,6 +56,7 @@ class DavidException;
     arg_t getHistoryValue(Command& command) const;
 
     std::string program_name;
+    
 
   private:
     CommandWords * commands;  // holds all valid command words

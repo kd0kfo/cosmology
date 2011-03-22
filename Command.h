@@ -23,7 +23,7 @@ class DavidException;
 	class Command
 	{
 		public:
-			Command(const arg_t&);
+	  Command(const arg_t&);
 
 			static arg_t getVersion(){return "2.0";}
 
@@ -35,17 +35,16 @@ class DavidException;
 			const arg_t& getWholeCommandString() const{return words;}
 
 			//Calculation methods
-			static arg_t print(const Command& command);
+			arg_t print();
                         static arg_t set(const Command& command);
                         static args_t load(const arg_t& fileName);
-	
+
 		private:
-                    static arg_t print(const Command& command,std::string (*)(const Command&));
 			arg_t words;
 			grmr::token_t commandWord, secondWord;
 			std::vector<grmr::token_t> args;
 	};
 
-        extern std::string print_function(const Command& arg);
+extern std::string print_function(const Command& arg);
 
 #endif

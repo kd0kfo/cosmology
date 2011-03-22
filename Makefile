@@ -1,4 +1,4 @@
-COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g
+COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g -O0
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -D__USE_BOINC__
 #COMPILER = c++ -fpermissive -w -D__USE_BOINC__ -D__VERBOSE__ -static
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
@@ -23,8 +23,11 @@ utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o  Rainbow.o
 mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o  DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}
 
-mycosmo: mycosmo.cpp  Parser.o Help.o Build.o Command.o CommandWords.o   DArrayinstantiations.o  DStackinstantiations.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ -L ${LIBMYGL_PATH}/lib -L ${LIBDNSTD_PATH}/lib  -o mycosmo${SUFFIX} -L $(FFTW_PATH)/lib -lmygl -ldnstd -lfftw3  -lm
+mycosmo: 
+	bison -y -d mycosmo.y
+	flex mycosmo.l
+	gcc -c y.tab.c lex.yy.c
+	gcc -o mycosmo y.tab.o lex.yy.o mycosmo.c
 
 makecluster: makecluster.cpp create_cluster.o makecluster 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}
