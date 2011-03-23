@@ -1,8 +1,9 @@
 #ifndef FUNCTIONS_H
 #include <string>
 #include <map>
+#include <iostream>
 #include "libmygl/plane.h"
-
+#include "libdnstd/Double.h"
 #include "symrec.h"
 
 extern double ans;
@@ -15,11 +16,13 @@ plane_t *create_plane(double n, double m)
 
 symrec* print_plane(symrec** vars, size_t size)
 {
+  using namespace std;
   if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
     return NULL;
   const plane_t* plane = vars[0]->value.planeptr;
   printf("dim: %d by %d\n",plane->numberOfRows(), plane->numberOfColumns());
-  return vars[0];
+  cout << "max: " << plane->getMaxValue() << "   min: " << plane->getMinValue() << "   sum: " << plane->getTotalValue() << endl;
+  return NULL;
 }
 
 symrec* clear_plane(symrec** vars,size_t size)
