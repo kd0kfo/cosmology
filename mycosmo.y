@@ -1,165 +1,216 @@
 %{
+#include <math.h>  /* For math functions, cos(), sin(), etc.  */
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include "mycosmo.h"
+#include <string.h>
+#include "symrec.h"
+#include "functions.h"
 
-/* prototypes */
-nodeType *opr(int oper, int nops, ...);
-nodeType *id(int i);
-nodeType *con(int value);
-void freeNode(nodeType *p);
-int ex(nodeType *p);
-int yylex(void);
-
-void yyerror(char *s);
-int sym[26];                    /* symbol table */
-%}
-
+  int yylex (void);
+  void yyerror (char const *);
+  double do_funct(symrec* fnct, symrec* param);
+  double ans;
+  %}
 %union {
-    int iValue;                 /* integer value */
-    char sIndex;                /* symbol table index */
-    nodeType *nPtr;             /* node pointer */
-};
-
-%token <iValue> INTEGER
-%token <sIndex> VARIABLE
-%token WHILE IF PRINT
-%nonassoc IFX
-%nonassoc ELSE
-
-%left GE LE EQ NE '>' '<'
-%left '+' '-'
+  double    val;   /* For returning numbers.  */
+  symrec  *tptr;   /* For returning symbol-table pointers.  */
+}
+%token <val>  NUM        /* Simple double precision number.  */
+%token <tptr> VAR FNCT   /* Variable and Function.  */
+%type  <val>  exp
+     
+%right '='
+%left '-' '+'
 %left '*' '/'
-%left '^'
-%nonassoc UMINUS
-
-%type <nPtr> stmt expr stmt_list
-
+%left NEG     /* negation--unary minus */
+%right '^'    /* exponentiation */
+%% /* The grammar follows.  */
+input:   /* empty */
+             | input line
+     ;
+     
+     line:
+               '\n'
+             | exp '\n'   { printf ("\t%.10g\n", $1); ans = $1}
+             | error '\n' { yyerrok;                  }
+     ;
+     
+     exp:      NUM                { $$ = $1;                         }
+             | '%'                { $$ = ans;                        }
+             | VAR                { $$ = $1->value.var;              }
+             | VAR '=' exp        { $$ = $3; $1->value.var = $3;     }
+             | FNCT '(' exp ')'   { $$ = (*($1->value.fnctptr))($3); }
+             | FNCT '(' VAR ')'   { $$ = do_funct($1,$3); }
+             | exp '+' exp        { $$ = $1 + $3;                    }
+             | exp '-' exp        { $$ = $1 - $3;                    }
+             | exp '*' exp        { $$ = $1 * $3;                    }
+             | exp '/' exp        { $$ = $1 / $3;                    }
+             | '-' exp  %prec NEG { $$ = -$2;                        }
+             | exp '^' exp        { $$ = pow ($1, $3);               }
+             | '(' exp ')'        { $$ = $2;                         }
+             | VAR '[' exp ',' exp ']' { create_plane($1->name,$3,$5); $$ = $3 * $5}
+     ;
+     /* End of grammar.  */
 %%
 
-program:
-        function                { exit(0); }
-        ;
+symrec *
+     putsym (char const *sym_name, int sym_type)
+     {
+       symrec *ptr;
+       ptr = (symrec *) malloc (sizeof (symrec));
+       ptr->name = (char *) malloc (strlen (sym_name) + 1);
+       strcpy (ptr->name,sym_name);
+       ptr->type = sym_type;
+       ptr->value.var = 0; /* Set value to 0 even if fctn.  */
+       ptr->next = (struct symrec *)sym_table;
+       sym_table = ptr;
+       return ptr;
+     }
+     
+     symrec *
+     getsym (char const *sym_name)
+     {
+       symrec *ptr;
+       for (ptr = sym_table; ptr != (symrec *) 0;
+            ptr = (symrec *)ptr->next)
+         if (strcmp (ptr->name,sym_name) == 0)
+           return ptr;
+       return 0;
+     }
 
-function:
-          function stmt         { ex($2); freeNode($2); }
-        | /* NULL */
-        ;
+#include <ctype.h>
+     
+     int
+     yylex (void)
+     {
+       int c;
+     
+       /* Ignore white space, get first nonwhite character.  */
+       while ((c = getchar ()) == ' ' || c == '\t');
+     
+       if (c == EOF)
+         return 0;
+     
+       /* Char starts a number => parse the number.         */
+       if (c == '.' || isdigit (c))
+         {
+           ungetc (c, stdin);
+           scanf ("%lf", &yylval.val);
+           return NUM;
+         }
+     
+       /* Char starts an identifier => read the name.       */
+       if (isalpha (c))
+         {
+           symrec *s;
+           static char *symbuf = 0;
+           static int length = 0;
+           int i;
+     
+           /* Initially make the buffer long enough
+              for a 40-character symbol name.  */
+           if (length == 0)
+             length = 40, symbuf = (char *)malloc (length + 1);
+     
+           i = 0;
+           do
+             {
+               /* If buffer is full, make it bigger.        */
+               if (i == length)
+                 {
+                   length *= 2;
+                   symbuf = (char *) realloc (symbuf, length + 1);
+                 }
+               /* Add this character to the buffer.         */
+               symbuf[i++] = c;
+               /* Get another character.                    */
+               c = getchar ();
+             }
+           while (isalnum (c));
+     
+           ungetc (c, stdin);
+           symbuf[i] = '\0';
+     
+           s = getsym (symbuf);
+           if (s == 0)
+             s = putsym (symbuf, VAR);
+           yylval.tptr = s;
+           return s->type;
+         }
+     
+       /* Any other character is a token by itself.        */
+       return c;
+     }
 
-stmt:
-          ';'                            { $$ = opr(';', 2, NULL, NULL); }
-        | expr ';'                       { $$ = $1; }
-        | PRINT expr ';'                 { $$ = opr(PRINT, 1, $2); }
-        | VARIABLE '=' expr ';'          { $$ = opr('=', 2, id($1), $3); }
-        | WHILE '(' expr ')' stmt        { $$ = opr(WHILE, 2, $3, $5); }
-        | IF '(' expr ')' stmt %prec IFX { $$ = opr(IF, 2, $3, $5); }
-        | IF '(' expr ')' stmt ELSE stmt { $$ = opr(IF, 3, $3, $5, $7); }
-        | '{' stmt_list '}'              { $$ = $2; }
-        ;
 
-stmt_list:
-          stmt                  { $$ = $1; }
-        | stmt_list stmt        { $$ = opr(';', 2, $1, $2); }
-        ;
+/* Called by yyparse on error.  */
+     void
+     yyerror (char const *s)
+     {
+       printf ("%s\n", s);
+     }
+     
+     struct init
+     {
+       char const *fname;
+       double (*fnct) (double);
+     };
+     
+     struct init const arith_fncts[] =
+     {
+       "sin",  sin,
+       "cos",  cos,
+       "atan", atan,
+       "ln",   log,
+       "exp",  exp,
+       "sqrt", sqrt,
+       0, 0
+     };
+     
+     /* The symbol table: a chain of `struct symrec'.  */
+     symrec *sym_table;
+     
+/**
+ * Initialize function table
+ */
+     void
+     init_table (void)
+     {
+       int i;
+       symrec *ptr;
+       for (i = 0; arith_fncts[i].fname != 0; i++)
+         {
+           ptr = putsym (arith_fncts[i].fname, FNCT);
+           ptr->value.fnctptr = arith_fncts[i].fnct;
+           ptr->plane_fnctptr = NULL;
+         }
+       putsym("printp",FNCT)->plane_fnctptr = print_plane;
+     }
+     
+     int
+     main (void)
+     {
+       symrec *funct;
+       init_table ();
+       printf("functions: ");
+       funct = sym_table;
+       while(funct != NULL)
+	 {
+	   printf("%s ",funct->name);
+	   funct = funct->next;
+	 }
+       printf("\n");
+       printf("Welcome to mycosmo. To exit, press CTRL-D.\n");
+       while(yyparse() != 0);
+       printf("Good bye.\n");
+       return 0;
+     }
 
-expr:
-          INTEGER               { $$ = con($1); }
-        | VARIABLE              { $$ = id($1); }
-        | '-' expr %prec UMINUS { $$ = opr(UMINUS, 1, $2); }
-        | expr '+' expr         { $$ = opr('+', 2, $1, $3); }
-        | expr '-' expr         { $$ = opr('-', 2, $1, $3); }
-        | expr '*' expr         { $$ = opr('*', 2, $1, $3); }
-        | expr '^' expr         { $$ = opr('^', 2, $1, $3); }
-        | expr '/' expr         { $$ = opr('/', 2, $1, $3); }
-        | expr '<' expr         { $$ = opr('<', 2, $1, $3); }
-        | expr '>' expr         { $$ = opr('>', 2, $1, $3); }
-        | expr GE expr          { $$ = opr(GE, 2, $1, $3); }
-        | expr LE expr          { $$ = opr(LE, 2, $1, $3); }
-        | expr NE expr          { $$ = opr(NE, 2, $1, $3); }
-        | expr EQ expr          { $$ = opr(EQ, 2, $1, $3); }
-        | '(' expr ')'          { $$ = $2; }
-        | error ';'             
-        | error '}'
-        ;
-
-%%
-
-#define SIZEOF_NODETYPE ((char *)&p->con - (char *)p)
-
-nodeType *con(int value) {
-    nodeType *p;
-    size_t nodeSize;
-
-    /* allocate node */
-    nodeSize = SIZEOF_NODETYPE + sizeof(conNodeType);
-    if ((p = malloc(nodeSize)) == NULL)
-        yyerror("out of memory");
-
-    /* copy information */
-    p->type = typeCon;
-    p->con.value = value;
-
-    return p;
+double do_funct(symrec *rec, symrec *param)
+{
+  if(rec == NULL || param == NULL)
+    return ans;
+  if(rec->plane_fnctptr != NULL)
+    return (*rec->plane_fnctptr)(param->name);
+  return (*(rec->value.fnctptr))(param->value.var);
 }
 
-nodeType *id(int i) {
-    nodeType *p;
-    size_t nodeSize;
-
-    /* allocate node */
-    nodeSize = SIZEOF_NODETYPE + sizeof(idNodeType);
-    if ((p = malloc(nodeSize)) == NULL)
-        yyerror("out of memory");
-
-    /* copy information */
-    p->type = typeId;
-    p->id.i = i;
-
-    return p;
-}
-
-nodeType *opr(int oper, int nops, ...) {
-    va_list ap;
-    nodeType *p;
-    size_t nodeSize;
-    int i;
-
-    /* allocate node */
-    nodeSize = SIZEOF_NODETYPE + sizeof(oprNodeType) +
-        (nops - 1) * sizeof(nodeType*);
-    if ((p = malloc(nodeSize)) == NULL)
-        yyerror("out of memory");
-
-    /* copy information */
-    p->type = typeOpr;
-    p->opr.oper = oper;
-    p->opr.nops = nops;
-    va_start(ap, nops);
-    for (i = 0; i < nops; i++)
-        p->opr.op[i] = va_arg(ap, nodeType*);
-    va_end(ap);
-    return p;
-}
-
-void freeNode(nodeType *p) {
-    int i;
-
-    if (!p) return;
-    if (p->type == typeOpr) {
-        for (i = 0; i < p->opr.nops; i++)
-            freeNode(p->opr.op[i]);
-    }
-    free (p);
-}
-
-void yyerror(char *s) {
-  fprintf(stdout, "Error: %s\n", s);
-}
-
-int main(void) {
-  printf("Welcome to mycosmo.\n");
-    yyparse();
-    printf("Good bye.\n");
-    return 0;
-}

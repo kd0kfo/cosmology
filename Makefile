@@ -23,11 +23,9 @@ utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o  Rainbow.o
 mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o  DStackinstantiations.o DArrayinstantiations.o  Rainbow.o
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}
 
-mycosmo: 
-	bison -y -d mycosmo.y
-	flex mycosmo.l
-	gcc -c y.tab.c lex.yy.c
-	gcc -o mycosmo y.tab.o lex.yy.o mycosmo.c -lm
+YACC=bison -d
+mycosmo: mycosmo.tab.c
+	${COMPILER} ${MYINCLUDES} -o mycosmo mycosmo.tab.c -lmygl -ldnstd -lm -L${LIBDNSTD_PATH}/lib -L${LIBMYGL_PATH}/lib
 
 makecluster: makecluster.cpp create_cluster.o makecluster 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}
@@ -36,8 +34,10 @@ nfwshear: nfwshear.cpp
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o nfwshear${SUFFIX}
 
 clean: 
-	rm -f *.o makecluster${SUFFIX}  mycosmo${SUFFIX} mass_to_shear${SUFFIX} utilities${SUFFIX} flatten${SUFFIX} ray_trace_ellipse${SUFFIX} y.tab.c lex.yy.c 
+	rm -f *.o makecluster${SUFFIX}  mycosmo${SUFFIX} mass_to_shear${SUFFIX} utilities${SUFFIX} flatten${SUFFIX} ray_trace_ellipse${SUFFIX} mycosmo.tab.c
 
 .cpp.o: %.h
 	${COMPILER} ${MYINCLUDES} -c $< -L$(FFTW_PATH)/include/
 
+%.tab.c %.tab.h: %.y
+	bison -d $<
