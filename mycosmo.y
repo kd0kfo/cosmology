@@ -5,9 +5,13 @@
 #include "symrec.h"
 #include "functions.h"
 
+  static const char* PROMPT_STRING = ">";
+
   int yylex (void);
   void yyerror (char const *);
   double do_funct(symrec* fnct, symrec* param);
+  double do_funct(symrec* fnct, double param);
+  double do_funct2(symrec* fnct, symrec* param, symrec* param2);
   double ans;
   %}
 %union {
@@ -30,16 +34,17 @@ input:   /* empty */
      
      line:
                '\n'
-             | exp '\n'   { printf ("\t%.10g\n", $1); ans = $1}
-             | error '\n' { yyerrok;                  }
-     ;
-     
+	       | exp '\n'   { printf ("\t%.10g\n%s", $1,PROMPT_STRING); ans = $1}
+               | error '\n' { yyerrok;  printf("%s",PROMPT_STRING)              }
+               ;
+
      exp:      NUM                { $$ = $1;                         }
              | '%'                { $$ = ans;                        }
-             | VAR                { $$ = $1->value.var;              }
+             | VAR                { $1->isPlane = false;$$ = $1->value.var; }
              | VAR '=' exp        { $$ = $3; $1->value.var = $3;     }
-             | FNCT '(' exp ')'   { $$ = (*($1->value.fnctptr))($3); }
-             | FNCT '(' VAR ')'   { $$ = do_funct($1,$3); }
+             | FNCT '(' exp ')'   { $$ = do_funct($1,$3) }
+             | FNCT '(' VAR ')'   { $$ = do_funct($1,$3);            }
+             | FNCT '(' VAR ',' VAR ')' { $$ = ans; do_funct2($1, $3, $5); }
              | exp '+' exp        { $$ = $1 + $3;                    }
              | exp '-' exp        { $$ = $1 - $3;                    }
              | exp '*' exp        { $$ = $1 * $3;                    }
@@ -47,8 +52,8 @@ input:   /* empty */
              | '-' exp  %prec NEG { $$ = -$2;                        }
              | exp '^' exp        { $$ = pow ($1, $3);               }
              | '(' exp ')'        { $$ = $2;                         }
-             | VAR '[' exp ',' exp ']' { create_plane($1->name,$3,$5); $$ = $3 * $5}
-     ;
+             | VAR '[' exp ',' exp ']' {$$ = ans; $1->value.planeptr = create_plane($3,$5); $1->isPlane = true;} 
+            ;
      /* End of grammar.  */
 %%
 
@@ -83,7 +88,7 @@ symrec *
      yylex (void)
      {
        int c;
-     
+
        /* Ignore white space, get first nonwhite character.  */
        while ((c = getchar ()) == ' ' || c == '\t');
      
@@ -183,7 +188,11 @@ symrec *
            ptr->value.fnctptr = arith_fncts[i].fnct;
            ptr->plane_fnctptr = NULL;
          }
-       putsym("printp",FNCT)->plane_fnctptr = print_plane;
+       putsym("print",FNCT)->plane_fnctptr = print_plane;
+       putsym("clear",FNCT)->plane_fnctptr = clear_plane;
+       putsym("add",FNCT)->plane_fnctptr = add_planes;
+       putsym("open",FNCT)->plane_fnctptr = open_plane;
+       putsym("save",FNCT)->plane_fnctptr = save_plane;
      }
      
      int
@@ -191,26 +200,54 @@ symrec *
      {
        symrec *funct;
        init_table ();
-       printf("functions: ");
-       funct = sym_table;
-       while(funct != NULL)
-	 {
-	   printf("%s ",funct->name);
-	   funct = funct->next;
-	 }
        printf("\n");
-       printf("Welcome to mycosmo. To exit, press CTRL-D.\n");
+       printf("Welcome to mycosmo. To exit, press CTRL-D.\n%s",PROMPT_STRING);
        while(yyparse() != 0);
        printf("Good bye.\n");
        return 0;
      }
+
+double do_funct(symrec *rec, double param)
+{
+  if(rec == NULL || rec->plane_fnctptr != NULL)
+    return param;
+  return (*(rec->value.fnctptr))(param);
+}
 
 double do_funct(symrec *rec, symrec *param)
 {
   if(rec == NULL || param == NULL)
     return ans;
   if(rec->plane_fnctptr != NULL)
-    return (*rec->plane_fnctptr)(param->name);
+    {
+      symrec* newrec = (*rec->plane_fnctptr)(&param,1);
+      if(newrec != NULL)
+	{
+	  newrec->next = (struct symrec *)sym_table;
+	  sym_table = newrec;
+	}
+      return ans;
+    }
   return (*(rec->value.fnctptr))(param->value.var);
 }
+
+
+double do_funct2(symrec* rec, symrec* param, symrec* param2)
+{
+  if(rec == NULL || param == NULL || param2 == NULL)
+    return ans;
+  if(rec->plane_fnctptr == NULL)
+    return ans;
+
+  symrec* params[] = {param,param2};
+  symrec* newrec = (*rec->plane_fnctptr)(params,2);
+  if(newrec != NULL)
+    {
+      newrec->next = (struct symrec *)sym_table;
+      sym_table = newrec;
+    }
+  return ans;
+}
+
+
 

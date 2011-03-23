@@ -3,27 +3,81 @@
 #include <map>
 #include "libmygl/plane.h"
 
+#include "symrec.h"
+
 extern double ans;
 typedef Plane<Double> plane_t;
-std::map<std::string,plane_t> plane_dict;
 
-bool create_plane(const char* name, double n, double m)
+plane_t *create_plane(double n, double m)
 {
-  plane_dict[name] = plane_t((int)n,(int)m,0.0);
-  return true;
+  return (new plane_t((int)n,(int)m,0.0));
 }
 
-double print_plane(const char* name)
+symrec* print_plane(symrec** vars, size_t size)
 {
-  if(plane_dict.find(name) == plane_dict.end())
+  if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
+    return NULL;
+  const plane_t* plane = vars[0]->value.planeptr;
+  printf("dim: %d by %d\n",plane->numberOfRows(), plane->numberOfColumns());
+  return vars[0];
+}
+
+symrec* clear_plane(symrec** vars,size_t size)
+{
+  if(vars == NULL || vars[0] == NULL)
+    return NULL;;
+  if(vars[0]->isPlane)
     {
-      printf("No such plane: %s\n",name);
-      return ans;
+      delete vars[0]->value.planeptr;
+      vars[0]->value.var = 0;
+      vars[0]->isPlane = false;
     }
-  const plane_t& plane = plane_dict[name];
+  return NULL;
+}
+
+symrec* add_planes(symrec** vars,size_t size)
+{
+  if(size < 2 || vars == NULL || vars[0] == NULL || vars[1] == NULL)
+    return NULL;
+  if(!vars[0]->isPlane || !vars[1]->isPlane)
+    return NULL;
+  symrec* ptr = (symrec*)malloc(sizeof(symrec));
+  ptr->name = (char *) calloc (1,sizeof(char));
+  ptr->type = VAR;
+  ptr->isPlane = true;
+  ptr->value.planeptr = plane_t::addPlanes(vars[0]->value.planeptr,vars[1]->value.planeptr);
   
-  printf("dim: %d by %d\n",plane.numberOfRows(), plane.numberOfColumns());
-  return ans;
+  return ptr;
+}
+
+class DavidException;
+symrec* open_plane(symrec** vars,size_t size)
+{
+  if(vars == NULL || vars[0] == NULL || vars[1] == NULL || vars[1]->name == NULL || size != 2)
+    return NULL;
+  try{
+    vars[0]->value.planeptr = plane_t::readPlane(vars[1]->name);
+    vars[0]->isPlane = true;
+  }
+  catch(DavidException de)
+    {
+      de.stdErr();
+    }
+  return NULL;
+}
+
+symrec* save_plane(symrec** vars,size_t size)
+{
+  if(vars == NULL || vars[0] == NULL || !vars[0]->isPlane || vars[1] == NULL || vars[0]->name == NULL || size != 2)
+    return NULL;
+  try{
+    vars[0]->value.planeptr->savePlane(vars[1]->name);
+  }
+  catch(DavidException de)
+    {
+      de.stdErr();
+    }
+  return NULL;
 }
 
 #endif
