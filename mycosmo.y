@@ -12,36 +12,38 @@
   double do_funct(symrec* fnct, symrec* param);
   double do_funct(symrec* fnct, double param);
   double do_funct2(symrec* fnct, symrec* param, symrec* param2);
+  int update_vars(symrec* var);
   double ans;
   %}
 %union {
   double    val;   /* For returning numbers.  */
-  symrec  *tptr;   /* For returning symbol-table pointers.  */
+  struct symrec  *tptr;   /* For returning symbol-table pointers.  */
 }
 %token <val>  NUM        /* Simple double precision number.  */
 %token <tptr> VAR FNCT   /* Variable and Function.  */
 %type  <val>  exp
-     
+%left ANS
 %right '='
 %left '-' '+'
 %left '*' '/'
 %left NEG     /* negation--unary minus */
 %right '^'    /* exponentiation */
 %% /* The grammar follows.  */
-input:   /* empty */
-             | input line
+input:   input stmt
+        | /* NULL */
      ;
      
-     line:
-               '\n'
-	       | exp '\n'   { printf ("\t%.10g\n%s", $1,PROMPT_STRING); ans = $1}
-               | error '\n' { yyerrok;  printf("%s",PROMPT_STRING)              }
+     stmt:
+               ';'
+	       | exp ';'   { printf ("\tans: %.10g\n%s", $1,PROMPT_STRING); ans = $1;}
+               | error ';' { yyerrok;  printf("%s",PROMPT_STRING)              }
                ;
 
-     exp:      NUM                { $$ = $1;                         }
-             | '%'                { $$ = ans;                        }
-             | VAR                { $1->isPlane = false;$$ = $1->value.var; }
-             | VAR '=' exp        { $$ = $3; $1->value.var = $3;     }
+exp:          NUM                { $$ = $1;yylval.val = $1;} 
+             | VAR                { $$ = $1->value.var;}
+             | ANS                { $$ = ans;             } 
+             | VAR '=' exp        { $$ = $3; $1->value.var = $3;    
+		 printf("%s: %f",$1->name,$1->value.var);  }
              | FNCT '(' exp ')'   { $$ = do_funct($1,$3) }
              | FNCT '(' VAR ')'   { $$ = do_funct($1,$3);            }
              | FNCT '(' VAR ',' VAR ')' { $$ = ans; do_funct2($1, $3, $5); }
@@ -49,6 +51,7 @@ input:   /* empty */
              | exp '-' exp        { $$ = $1 - $3;                    }
              | exp '*' exp        { $$ = $1 * $3;                    }
              | exp '/' exp        { $$ = $1 / $3;                    }
+             | exp '%' exp        { $$ = (int)$1 % (int)$3;}
              | '-' exp  %prec NEG { $$ = -$2;                        }
              | exp '^' exp        { $$ = pow ($1, $3);               }
              | '(' exp ')'        { $$ = $2;                         }
@@ -83,7 +86,7 @@ symrec *
      }
 
 #include <ctype.h>
-     
+#if 0     
      int
      yylex (void)
      {
@@ -145,7 +148,7 @@ symrec *
        /* Any other character is a token by itself.        */
        return c;
      }
-
+#endif
 
 /* Called by yyparse on error.  */
      void
