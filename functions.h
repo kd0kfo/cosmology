@@ -63,6 +63,24 @@ symrec* subtract_planes(symrec** vars,size_t size)
   return NULL;
 }
 
+symrec* multiply_planes(symrec** vars,size_t size)
+{
+  if(size < 2 || vars == NULL || vars[0] == NULL || vars[1] == NULL)
+    return NULL;
+  if(!vars[0]->isPlane || !vars[1]->isPlane)
+    return NULL;
+  int nn[2];
+  plane_t *lhs,*rhs;
+  lhs = vars[0]->value.planeptr;
+  rhs = vars[1]->value.planeptr;
+  nn[0] = min(lhs->numberOfRows(),rhs->numberOfRows());
+  nn[1] = min(lhs->numberOfColumns(),rhs->numberOfColumns());
+  for(int i = 0;i<nn[0];i++)
+    for(int j = 0;j<nn[1];j++)
+      lhs->setValue(i,j, lhs->getValue(i,j)*rhs->getValue(i,j) );
+  return NULL;
+}
+
 class DavidException;
 symrec* open_plane(symrec** vars,size_t size)
 {
