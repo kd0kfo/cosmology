@@ -45,13 +45,22 @@ symrec* add_planes(symrec** vars,size_t size)
     return NULL;
   if(!vars[0]->isPlane || !vars[1]->isPlane)
     return NULL;
-  symrec* ptr = (symrec*)malloc(sizeof(symrec));
-  ptr->name = (char *) calloc (1,sizeof(char));
-  ptr->type = VAR;
-  ptr->isPlane = true;
-  ptr->value.planeptr = plane_t::addPlanes(vars[0]->value.planeptr,vars[1]->value.planeptr);
-  
-  return ptr;
+  plane_t* product = plane_t::addPlanes(vars[0]->value.planeptr,vars[1]->value.planeptr);
+  delete vars[0]->value.planeptr;
+  vars[0]->value.planeptr = product;
+  return NULL;
+}
+
+symrec* subtract_planes(symrec** vars,size_t size)
+{
+  if(size < 2 || vars == NULL || vars[0] == NULL || vars[1] == NULL)
+    return NULL;
+  if(!vars[0]->isPlane || !vars[1]->isPlane)
+    return NULL;
+  plane_t* product = plane_t::subtractPlanes(vars[0]->value.planeptr,vars[1]->value.planeptr);
+  delete vars[0]->value.planeptr;
+  vars[0]->value.planeptr = product;
+  return NULL;
 }
 
 class DavidException;
