@@ -2,6 +2,7 @@
 #include <math.h>  /* For math functions, cos(), sin(), etc.  */
 #include <stdio.h>
 #include <string.h>
+#include <complex>
 #include "symrec.h"
 #include "functions.h"
 
@@ -11,20 +12,22 @@
   extern char* yytext;
   void yyerror (char const *);
   void do_command(const char*);
-  double do_funct(symrec* fnct, symrec* param);
-  double do_funct(symrec* fnct, double param);
-  double do_funct2(symrec* fnct, symrec* param, symrec* param2);
+  void do_funct(symrec* fnct, symrec* param, double result[2]);
+  void do_funct(symrec* fnct, double param[2], double result[2]);
+  void do_funct2(symrec* fnct, symrec* param, symrec* param2, double result[2]);
   int update_vars(symrec* var);
-  double handle_plane(symrec *rec,double& i, double& j);
-  double ans;
+  void handle_plane(symrec *rec,double& i, double& j, double result[2]);
+  double ans[2];
+  void print_complex(double cnumber[2]);
 
  %}
 %union {
-  double    val;   /* For returning numbers.  */
+  double    val[2];   /* For returning numbers.  */
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */
 }
 %token <val>  NUM        /* Simple double precision number.  */
 %token <tptr> VAR FNCT EXIT 
+%token IMAG
 %type  <val>  exp
 %left ANS
 %right '='
@@ -41,26 +44,27 @@ input:   input stmt
      stmt:
                ';'
                | EXIT ';' {YYACCEPT;}
-	       | exp ';'   { printf ("\tans: %.10g\n%s", $1,PROMPT_STRING); ans = $1;}
+               | exp ';'   { print_complex($1); ans = $1;}
                | error ';' { yyerrok;  printf("%s",PROMPT_STRING)         }
                ;
 
-exp:          NUM                { $$ = $1;yylval.val = $1;} 
+exp:          NUM                 { $$ = $1;yylval.val = $1;}
+             | NUM IMAG { yylval.val[0] = 0;yylval.val[1] = $1[0];$$ = yylval.val;}
              | VAR                { $$ = $1->value.var;}
              | ANS                { $$ = ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var = $3; }
-             | FNCT '(' exp ')'   { $$ = do_funct($1,$3) }
-             | FNCT '(' VAR ')'   { $$ = do_funct($1,$3);            }
-             | FNCT '(' VAR ',' VAR ')' { $$ = ans; do_funct2($1, $3, $5); }
-             | exp '+' exp        { $$ = $1 + $3;                    }
-             | exp '-' exp        { $$ = $1 - $3;                    }
-             | exp '*' exp        { $$ = $1 * $3;                    }
-             | exp '/' exp        { $$ = $1 / $3;                    }
-             | exp '%' exp        { $$ = (int)$1 % (int)$3;}
-             | '-' exp  %prec NEG { $$ = -$2;                        }
-             | exp '^' exp        { $$ = pow ($1, $3);               }
+             | FNCT '(' VAR ')'   { do_funct($1,$3->value.var, $$); }
+             | FNCT '(' exp ')'   { do_funct($1,$3,$$); }
+             | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,$$); }
+             | exp '+' exp        { $$[0] = $1[0] + $3[0];$$[1] = $1[1]+$3[1];}
+             | exp '-' exp        { $$[0] = $1[0] - $3[0];$$[1] = $1[1]-$3[1];}
+             | exp '*' exp        { $$[0] = $1[0] * $3[0]-$1[1]*$3[1];$$[1] = $1[0]*$3[1]+$1[1]*$3[0];}
+             | exp '/' exp        { $$[0] = $1[0] / $3[0];                    }
+             | exp '%' exp        { $$[0] = (int)$1[0] % (int)$3[0];}
+             | '-' exp  %prec NEG { $$[0] = -$2[0];$$[1] = -$2[1];         }
+             | exp '^' exp        { $$[0] = pow ($1[0], $3[0]);               }
              | '(' exp ')'        { $$ = $2;                         }
-| VAR '[' exp ',' exp ']' {$$ = handle_plane($1,$3,$5);} 
+             | VAR '[' exp ',' exp ']' {handle_plane($1,$3[0],$5[0],$$);} 
             ;
      /* End of grammar.  */
 %%
@@ -73,7 +77,8 @@ symrec *
        ptr->name = (char *) malloc (strlen (sym_name) + 1);
        strcpy (ptr->name,sym_name);
        ptr->type = sym_type;
-       ptr->value.var = 0; /* Set value to 0 even if fctn.  */
+       ptr->value.var[0] = 0; /* Set value to 0 even if fctn.  */
+       ptr->value.var[1] = 0;
        ptr->next = (struct symrec *)sym_table;
        sym_table = ptr;
        return ptr;
@@ -107,7 +112,7 @@ symrec *
        if (c == '.' || isdigit (c))
          {
            ungetc (c, stdin);
-           scanf ("%lf", &yylval.val);
+           scanf ("%lf", &yylval.val[0]);
            return NUM;
          }
      
@@ -215,17 +220,24 @@ symrec *
        return 0;
      }
 
-double do_funct(symrec *rec, double param)
+void do_funct(symrec *rec, double param[2], double result[2])
 {
   if(rec == NULL || rec->plane_fnctptr != NULL)
-    return param;
-  return (*(rec->value.fnctptr))(param);
+    {
+      result[0] = param[0];      param[1] = ans[1];
+      return;
+    }
+  result[0] = (*(rec->value.fnctptr))(param[0]);      
+  param[1] = 0.0;
 }
 
-double do_funct(symrec *rec, symrec *param)
+void do_funct(symrec *rec, symrec *param, double result[2])
 {
   if(rec == NULL || param == NULL)
-    return ans;
+    {
+      result[0] = ans[0];      result[1] = ans[1];
+      return;
+    }
   if(rec->plane_fnctptr != NULL)
     {
       symrec* newrec = (*rec->plane_fnctptr)(&param,1);
@@ -234,18 +246,21 @@ double do_funct(symrec *rec, symrec *param)
 	  newrec->next = (struct symrec *)sym_table;
 	  sym_table = newrec;
 	}
-      return ans;
+       result[0] = ans[0];      result[1] = ans[1];
+       return ans;
     }
-  return (*(rec->value.fnctptr))(param->value.var);
+  result[0] = (*(rec->value.fnctptr))(param->value.var[0]);
+  result[1] = 0.0;
 }
 
 
-double do_funct2(symrec* rec, symrec* param, symrec* param2)
+void do_funct2(symrec* rec, symrec* param, symrec* param2, double result[2])
 {
+  result[0] = ans[0];      result[1] = ans[1];
   if(rec == NULL || param == NULL || param2 == NULL)
-    return ans;
+    return;
   if(rec->plane_fnctptr == NULL)
-    return ans;
+    return;
 
   symrec* params[] = {param,param2};
   symrec* newrec = (*rec->plane_fnctptr)(params,2);
@@ -254,18 +269,33 @@ double do_funct2(symrec* rec, symrec* param, symrec* param2)
       newrec->next = (struct symrec *)sym_table;
       sym_table = newrec;
     }
-  return ans;
+
 }
 
-double handle_plane(symrec *rec,double& i, double& j)
+void handle_plane(symrec *rec,double& i, double& j, double result[2])
 {
   rec->isPlane = true;
   if(rec->value.planeptr == NULL)
     {
       rec->value.planeptr = create_plane(i,j); 
-      return ans;
+      result[0] = ans[0];      result[1] = ans[1];
     }
+  const Double& complex = rec->value.planeptr->getValue((int)i,(int)j);
+  result[0] = complex.getValue(0);
+  result[1] = complex.getValue(1);
+}
 
-  return rec->value.planeptr->getValue((int)i,(int)j).getValue(0);
+void print_complex(double cnumber[2])
+{
+  using namespace std;
+  cout << "\tans: ";
+  if(cnumber[1] != 0)
+    {
+      complex<double> buff(cnumber[0],cnumber[1]);
+      cout << buff;
+    }
+  else
+    cout << cnumber[0];
+  cout <<   endl << ">";
 }
 

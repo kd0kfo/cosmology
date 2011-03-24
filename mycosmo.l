@@ -12,6 +12,7 @@ void yyerror(const char *);
 "ans"  return ANS;
 "exit" return EXIT;
 "quit" return EXIT;
+"i" return IMAG;
 
 [a-zA-Z]*  {
            symrec* rec = getsym(yytext);
@@ -22,7 +23,7 @@ void yyerror(const char *);
         }
 
 [0-9]*    {
-            yylval.val = atoi(yytext);
+            yylval.val[0] = atoi(yytext);yylval.val[1] = 0.0;
             return NUM;
           }
 

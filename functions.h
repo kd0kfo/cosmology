@@ -6,7 +6,7 @@
 #include "libdnstd/Double.h"
 #include "symrec.h"
 
-extern double ans;
+extern double ans[];
 typedef Plane<Double> plane_t;
 
 plane_t *create_plane(double n, double m)
@@ -32,7 +32,7 @@ symrec* clear_plane(symrec** vars,size_t size)
   if(vars[0]->isPlane)
     {
       delete vars[0]->value.planeptr;
-      vars[0]->value.var = 0;
+      vars[0]->value.var[0] = vars[0]->value.var[1] = 0;
       vars[0]->isPlane = false;
     }
   return NULL;

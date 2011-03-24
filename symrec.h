@@ -16,7 +16,7 @@
        int type;    /* type of symbol: either VAR or FNCT */
        union
        {
-         double var;      /* value of a VAR */
+         double var[2];      /* value of a VAR */
          func_t fnctptr;  /* value of a FNCT */
 	 Plane<Double>* planeptr;
        } value;
