@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <fftw3.h>
 #include "libmygl/plane.h"
 #include "libdnstd/Double.h"
 #include "symrec.h"
@@ -80,6 +81,89 @@ symrec* save_plane(symrec** vars,size_t size)
     {
       de.stdErr();
     }
+  return NULL;
+}
+
+symrec* copy_plane(symrec** vars, size_t size)
+{
+  if(vars == NULL || vars[0] == NULL || !vars[0]->isPlane || vars[1] == NULL || vars[0]->name == NULL || size != 2)
+    return NULL;
+  
+  symrec* source = vars[0];
+  symrec* dest = vars[1];
+
+  if(dest->isPlane)
+    delete dest->value.planeptr;
+  else
+    dest->isPlane = true;
+  dest->value.planeptr = new plane_t(*source->value.planeptr);
+  return NULL;
+}
+
+symrec* fourier_plane(symrec** vars, size_t size)
+{
+  if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
+    return NULL;
+  plane_t* plane = vars[0]->value.planeptr;
+  fftw_complex* data;
+  fftw_plan plan ;
+  int* nn = plane->getDimensions();
+  data = (fftw_complex*)malloc(nn[0]*nn[1]*sizeof(fftw_complex));
+  plan = fftw_plan_dft(2,nn ,data,data,FFTW_FORWARD,FFTW_ESTIMATE);
+  for(int i = 0;i<nn[0];i++)
+    for(int j = 0;j<nn[1];j++)
+      {
+	const plane_t::data_type& val = plane->getValue(i,j);
+	data[ j+i*nn[1] ][0] = val.getRealPart();
+	data[ j+i*nn[1] ][1] = val.getImaginaryPart();
+      }
+
+  fftw_execute(plan);
+
+ for(int i = 0;i<nn[0];i++)
+    for(int j = 0;j<nn[1];j++)
+      {
+	plane_t::data_type val(data[ j+i*nn[1] ][0],data[ j+i*nn[1] ][1]);
+	plane->setValue(i,j,val) ;
+      }
+ 
+  fftw_destroy_plan(plan);
+  fftw_free(data);
+  delete nn;
+  return NULL;
+}
+
+symrec* ifourier_plane(symrec** vars, size_t size)
+{
+  if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
+    return NULL;
+  plane_t* plane = vars[0]->value.planeptr;
+  fftw_complex* data;
+  fftw_plan plan ;
+  int* nn = plane->getDimensions(), norm;
+  norm = nn[0]*nn[1];
+  data = (fftw_complex*)malloc(nn[0]*nn[1]*sizeof(fftw_complex));
+  plan = fftw_plan_dft(2,nn ,data,data,FFTW_BACKWARD,FFTW_ESTIMATE);
+  for(int i = 0;i<nn[0];i++)
+    for(int j = 0;j<nn[1];j++)
+      {
+	const plane_t::data_type& val = plane->getValue(i,j);
+	data[ j+i*nn[1] ][0] = val.getRealPart();
+	data[ j+i*nn[1] ][1] = val.getImaginaryPart();
+      }
+
+  fftw_execute(plan);
+
+ for(int i = 0;i<nn[0];i++)
+    for(int j = 0;j<nn[1];j++)
+      {
+	plane_t::data_type val(data[ j+i*nn[1] ][0]/norm,data[ j+i*nn[1] ][1]/norm);
+	plane->setValue(i,j,val) ;
+      }
+ 
+  fftw_destroy_plan(plan);
+  fftw_free(data);
+  delete nn;
   return NULL;
 }
 
