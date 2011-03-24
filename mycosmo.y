@@ -15,6 +15,7 @@
   double do_funct(symrec* fnct, double param);
   double do_funct2(symrec* fnct, symrec* param, symrec* param2);
   int update_vars(symrec* var);
+  double handle_plane(symrec *rec,double& i, double& j);
   double ans;
 
  %}
@@ -41,7 +42,7 @@ input:   input stmt
                ';'
                | EXIT ';' {YYACCEPT;}
 	       | exp ';'   { printf ("\tans: %.10g\n%s", $1,PROMPT_STRING); ans = $1;}
-               | error ';' { yyerrok;  printf("%s",PROMPT_STRING)              }
+               | error ';' { yyerrok;  printf("%s",PROMPT_STRING)         }
                ;
 
 exp:          NUM                { $$ = $1;yylval.val = $1;} 
@@ -59,7 +60,7 @@ exp:          NUM                { $$ = $1;yylval.val = $1;}
              | '-' exp  %prec NEG { $$ = -$2;                        }
              | exp '^' exp        { $$ = pow ($1, $3);               }
              | '(' exp ')'        { $$ = $2;                         }
-             | VAR '[' exp ',' exp ']' {$$ = ans; $1->value.planeptr = create_plane($3,$5); $1->isPlane = true;} 
+| VAR '[' exp ',' exp ']' {$$ = handle_plane($1,$3,$5);} 
             ;
      /* End of grammar.  */
 %%
@@ -254,5 +255,17 @@ double do_funct2(symrec* rec, symrec* param, symrec* param2)
       sym_table = newrec;
     }
   return ans;
+}
+
+double handle_plane(symrec *rec,double& i, double& j)
+{
+  rec->isPlane = true;
+  if(rec->value.planeptr == NULL)
+    {
+      rec->value.planeptr = create_plane(i,j); 
+      return ans;
+    }
+
+  return rec->value.planeptr->getValue((int)i,(int)j).getValue(0);
 }
 
