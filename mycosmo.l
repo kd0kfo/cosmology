@@ -14,7 +14,7 @@ void yyerror(const char *);
 "quit" return EXIT;
 "i" return IMAG;
 
-[a-zA-Z]*  {
+[a-zA-Z][a-zA-Z0-9]*  {
            symrec* rec = getsym(yytext);
            if(rec == NULL)
                rec = putsym(yytext,VAR);
