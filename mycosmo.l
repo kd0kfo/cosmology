@@ -4,17 +4,21 @@
 #include "symrec.h"
 
 void yyerror(const char *);
+
+
 %}
 
 %% 
 "ans"  return ANS;
+"exit" return EXIT;
+"quit" return EXIT;
 
 [a-zA-Z]*  {
            symrec* rec = getsym(yytext);
            if(rec == NULL)
                rec = putsym(yytext,VAR);
            yylval.tptr = rec;
-          return VAR;
+          return rec->type;
         }
 
 [0-9]*    {
@@ -22,7 +26,7 @@ void yyerror(const char *);
             return NUM;
           }
 
-[-()%<>=+*/;{}.^]  {  return *yytext;  }
+[-()%<>=+*/;\[\],{}.^]  {  return *yytext;  }
 
 [ \t\n]+  ;//ignore whitespace
 
@@ -36,3 +40,4 @@ int yywrap(void)
 printf(">");
 return 1;
 }
+

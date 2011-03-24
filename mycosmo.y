@@ -8,19 +8,22 @@
   static const char* PROMPT_STRING = ">";
 
   int yylex (void);
+  extern char* yytext;
   void yyerror (char const *);
+  void do_command(const char*);
   double do_funct(symrec* fnct, symrec* param);
   double do_funct(symrec* fnct, double param);
   double do_funct2(symrec* fnct, symrec* param, symrec* param2);
   int update_vars(symrec* var);
   double ans;
-  %}
+
+ %}
 %union {
   double    val;   /* For returning numbers.  */
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */
 }
 %token <val>  NUM        /* Simple double precision number.  */
-%token <tptr> VAR FNCT   /* Variable and Function.  */
+%token <tptr> VAR FNCT EXIT 
 %type  <val>  exp
 %left ANS
 %right '='
@@ -28,6 +31,7 @@
 %left '*' '/'
 %left NEG     /* negation--unary minus */
 %right '^'    /* exponentiation */
+
 %% /* The grammar follows.  */
 input:   input stmt
         | /* NULL */
@@ -35,6 +39,7 @@ input:   input stmt
      
      stmt:
                ';'
+               | EXIT ';' {YYACCEPT;}
 	       | exp ';'   { printf ("\tans: %.10g\n%s", $1,PROMPT_STRING); ans = $1;}
                | error ';' { yyerrok;  printf("%s",PROMPT_STRING)              }
                ;
@@ -42,8 +47,7 @@ input:   input stmt
 exp:          NUM                { $$ = $1;yylval.val = $1;} 
              | VAR                { $$ = $1->value.var;}
              | ANS                { $$ = ans;             } 
-             | VAR '=' exp        { $$ = $3; $1->value.var = $3;    
-		 printf("%s: %f",$1->name,$1->value.var);  }
+             | VAR '=' exp        { $$ = $3; $1->value.var = $3; }
              | FNCT '(' exp ')'   { $$ = do_funct($1,$3) }
              | FNCT '(' VAR ')'   { $$ = do_funct($1,$3);            }
              | FNCT '(' VAR ',' VAR ')' { $$ = ans; do_funct2($1, $3, $5); }
@@ -154,7 +158,7 @@ symrec *
      void
      yyerror (char const *s)
      {
-       printf ("%s\n", s);
+       printf ("%s: %s\n", s,yytext);
      }
      
      struct init
@@ -205,7 +209,7 @@ symrec *
        init_table ();
        printf("\n");
        printf("Welcome to mycosmo. To exit, press CTRL-D.\n%s",PROMPT_STRING);
-       while(yyparse() != 0);
+       yyparse();
        printf("Good bye.\n");
        return 0;
      }
@@ -251,6 +255,4 @@ double do_funct2(symrec* rec, symrec* param, symrec* param2)
     }
   return ans;
 }
-
-
 

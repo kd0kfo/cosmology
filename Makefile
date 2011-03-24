@@ -24,7 +24,7 @@ mass_to_shear: mass_to_shear.cpp Functions.o utilities.o flatten.o  DStackinstan
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYFFT_PATH}/libmyfft.a ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a  -o mass_to_shear${SUFFIX}
 
 mycosmo: mycosmo.tab.c mycosmo.yy.c
-	${COMPILER} ${MYINCLUDES} -o mycosmo mycosmo.yy.c mycosmo.tab.c  -lmygl -ldnstd -lm -L${LIBDNSTD_PATH}/lib -L${LIBMYGL_PATH}/lib
+	${COMPILER} ${MYINCLUDES} -o mycosmo mycosmo.tab.c mycosmo.yy.c  -lmygl -ldnstd -lm -L${LIBDNSTD_PATH}/lib -L${LIBMYGL_PATH}/lib
 
 makecluster: makecluster.cpp create_cluster.o makecluster 
 	${COMPILER} ${MYINCLUDES} $^ ${LIBMYGL_PATH}/libmygl.a ${LIBDNSTD_PATH}/libdnstd.a -o makecluster${SUFFIX}
