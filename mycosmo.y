@@ -26,8 +26,8 @@
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */
 }
 %token <val>  NUM        /* Simple double precision number.  */
-%token <tptr> VAR FNCT EXIT 
-%token IMAG
+%token <tptr> VAR FNCT 
+%token IMAG EXIT
 %type  <val>  exp
 %left ANS
 %right '='
@@ -53,7 +53,7 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | VAR                { $$ = $1->value.var;}
              | ANS                { $$ = ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var = $3; }
-             | FNCT '(' VAR ')'   { do_funct($1,$3->value.var, $$); }
+             | FNCT '(' VAR ')'   { do_funct($1,$3, $$); }
              | FNCT '(' exp ')'   { do_funct($1,$3,$$); }
              | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,$$); }
              | exp '+' exp        { $$[0] = $1[0] + $3[0];$$[1] = $1[1]+$3[1];}
