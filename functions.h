@@ -7,7 +7,7 @@
 #include "symrec.h"
 
 extern double ans[];
-typedef Plane<Double> plane_t;
+typedef Plane<math::Complex> plane_t;
 
 plane_t *create_plane(double n, double m)
 {

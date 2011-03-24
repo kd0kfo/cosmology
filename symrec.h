@@ -18,7 +18,7 @@
        {
          double var[2];      /* value of a VAR */
          func_t fnctptr;  /* value of a FNCT */
-	 Plane<Double>* planeptr;
+	 Plane<math::Complex>* planeptr;
        } value;
        plane_func_t plane_fnctptr;
        bool isPlane;
