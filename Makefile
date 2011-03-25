@@ -9,16 +9,13 @@ LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
 FFTW_PATH = $(HOME)/opt/fftw
 MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
 
-all: ray_trace_ellipse flatten utilities physcalc makecluster
+all: ray_trace_ellipse flatten  physcalc makecluster
 
 ray_trace_ellipse: ray_trace_ellipse.o 
 	${COMPILER} ${MYINCLUDES}  $^ -L${LIBMYGL_PATH}/lib -lmygl ${LIBDNSTD_PATH}/lib/libdnstd.a  -o ray_trace_ellipse${SUFFIX}
 
 flatten: flattenmain.cpp flatten.o  
 	${COMPILER} ${MYINCLUDES} $^ -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -ldnstd -o flatten${SUFFIX}
-
-utilities: utilitiesmain.cpp utilities.cpp Functions.o flatten.o  Rainbow.o
-	${COMPILER} ${MYINCLUDES} $^ -ldnstd  -lfftw3 -lm -L${LIBMYGL_PATH}/lib -lmygl -L${LIBDNSTD_PATH}/lib -L$(FFTW_PATH)/lib -o utilities${SUFFIX}
 
 physcalc: physcalc.tab.c physcalc.yy.c
 	${COMPILER} ${MYINCLUDES} -o physcalc physcalc.tab.c physcalc.yy.c  -lmygl -ldnstd -lm -L${LIBDNSTD_PATH}/lib -L${LIBMYGL_PATH}/lib  -lfftw3 -L${FFTW_PATH}/lib

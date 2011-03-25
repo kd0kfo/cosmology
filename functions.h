@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <algorithm>
 #include <fftw3.h>
 #include "libmygl/plane.h"
 #include "libdnstd/Double.h"
@@ -65,6 +66,7 @@ symrec* subtract_planes(symrec** vars,size_t size)
 
 symrec* multiply_planes(symrec** vars,size_t size)
 {
+  using std::min;
   if(size < 2 || vars == NULL || vars[0] == NULL || vars[1] == NULL)
     return NULL;
   if(!vars[0]->isPlane || !vars[1]->isPlane)

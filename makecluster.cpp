@@ -1,5 +1,5 @@
 #include "create_cluster.h"
-
+#include "libdnstd/utils.h"
 
 int uebermain(int argc, char** argv);
 
@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 int uebermain(int argc, char** argv)
 {
 
-  DString errorString("Usage: makecluster filename [total mass/convergence] [number of Particles] [redshift] [cluster type] [parameters] \nCluster types and parameters:\n\n nfw:[semimajor axis length] [ratio to next biggest] [ratio to smallest]\n nsis:[maximum distance] [core radius]\n ellipse: [axial ratio] [semimajor axis length]");
+  static const char* errorString = "Usage: makecluster filename [total mass/convergence] [number of Particles] [redshift] [cluster type] [parameters] \nCluster types and parameters:\n\n nfw:[semimajor axis length] [ratio to next biggest] [ratio to smallest]\n nsis:[maximum distance] [core radius]\n ellipse: [axial ratio] [semimajor axis length]";
 
   if(argc < 6)
     {
@@ -33,16 +33,16 @@ int uebermain(int argc, char** argv)
   
 
 
-  DString fileName(argv[1]);
+  std::string fileName(argv[1]);
   double totalMass = Double(argv[2]).doubleValue();
   double numberOfPoints = Double(argv[3]).doubleValue();
   double redshift = Double(argv[4]).doubleValue();
-  DString clusterType(argv[5]);int typeNumber = -1;
+  int typeNumber = -1;
   double * parameters;
+  std::string clusterType = utils::lower_case(argv[5]);
 
   double arcToKPC = 3.24077649e-22*Cosmology::arcsecondsToCentimeters(1,redshift);
-  clusterType.toLowerCase();
-  if(clusterType.equals("nfw"))
+  if(clusterType == "nfw")
     {
       if(argc < 9)
 	throw DavidException(errorString);
@@ -53,7 +53,7 @@ int uebermain(int argc, char** argv)
       parameters[1] = Double(argv[8]).doubleValue();
       typeNumber = Create_Cluster::NFW;
     }
-  else if(clusterType.equals("nsis"))
+  else if(clusterType == "nsis")
     {
       if(argc < 8)
 	throw DavidException(errorString);
@@ -63,7 +63,7 @@ int uebermain(int argc, char** argv)
       parameters[0] = Double(argv[7]).doubleValue();
       typeNumber = Create_Cluster::NSIS;
     }
-  else if(clusterType.equals("ellipse"))
+  else if(clusterType == "ellipse")
     {
       if(argc < 8)
 	throw DavidException(errorString);
@@ -78,13 +78,13 @@ int uebermain(int argc, char** argv)
       parameters = 0;
     }
   
-  if(fileName.charAt(0) == '-')
+  if(fileName.at(0) == '-')
     throw DavidException(errorString);
   
-  std::ofstream myfile(fileName.toCharArray(), std::ios::out);
+  std::ofstream myfile(fileName.c_str(), std::ios::out);
 
   if(!myfile.is_open())
-    throw DavidException(DString("Could not open: ")+fileName,DavidException::IO_ERROR_CODE);
+    throw DavidException(std::string("Could not open: ")+fileName,DavidException::IO_ERROR_CODE);
 
   try{
     
