@@ -10,7 +10,7 @@
 #include "libdnstd/DRandom.h"
 #include "libdnstd/DavidException.h"
 
-#include "libdnstd/Cosmology.h"
+#include "libmygl/Cosmology.h"
 
 
 #ifdef __VERBOSE__
