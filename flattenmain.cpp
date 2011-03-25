@@ -24,7 +24,7 @@ int wrappedmain(int argc, char** argv)
   if(!f.runAsDaemon)
     {
       DEBUG_PRINT("runasdaemon is false");
-      returnMe = f.createSurfaceMassDensity(f.clusterFilename.toCharArray(), f.clusterResolution,f.clusterOutLENS.toCharArray());
+      returnMe = f.createSurfaceMassDensity(f.clusterFilename.c_str(), f.clusterResolution,f.clusterOutLENS.c_str());
     }
   else
     {
@@ -40,14 +40,14 @@ int wrappedmain(int argc, char** argv)
 	daemonize( "/var/lock/subsys/" DAEMON_NAME );
 	
 	// Now we are a daemon -- do the work for which we were paid 
-	returnMe = f.createSurfaceMassDensity(f.clusterFilename.toCharArray(), f.clusterResolution,f.clusterOutLENS.toCharArray());
+	returnMe = f.createSurfaceMassDensity(f.clusterFilename.c_str(), f.clusterResolution,f.clusterOutLENS.c_str());
 	
 	// Finish up 
 	syslog( LOG_NOTICE, "terminated" );
 	closelog();
 #else
 	DEBUG_PRINT("not running daemon");
-	returnMe = f.createSurfaceMassDensity(f.clusterFilename.toCharArray(), f.clusterResolution,f.clusterOutLENS.toCharArray());
+	returnMe = f.createSurfaceMassDensity(f.clusterFilename.c_str(), f.clusterResolution,f.clusterOutLENS.c_str());
 #endif
     }
 
@@ -70,9 +70,9 @@ int main(int argc, char** argv)
   catch(DavidException de)
     {
 #ifdef __DEBUG__
-      DEBUG_PRINT(DString("Type: ") + de.getType());
-      DEBUG_PRINT(DString("Code: ") + Double(de.getCode()).toDString());
-      DEBUG_PRINT(DString("Message: "));
+      DEBUG_PRINT("Type: " << de.getType());
+      DEBUG_PRINT("Code: " << de.getCode());
+      DEBUG_PRINT("Message: ");
 #endif
 
       de.stdOut();

@@ -7,10 +7,9 @@
 #include <math.h>
 
 #include "libdnstd/DavidException.h"
-#include "libdnstd/DString.h"
 #include "libdnstd/StringTokenizer.h"
 #include "libdnstd/Double.h"
-#include "libdnstd/DStack.h"
+#include "libdnstd/utils.h"
 
 #include "libmygl/planecreator.h"
 
@@ -47,9 +46,8 @@ class Flatten{
  */
 int parseArgs(int argc, char** argv);
 
-void verbosePrint(const DString bean);
-void verbosePrint(const char * bean){return verbosePrint(DString(bean));}
-void verbosePrint(const double d){return verbosePrint(Double(d).toDString());}
+ void verbosePrint(const std::string bean);
+void verbosePrint(const double d){return verbosePrint(Double(d).str());}
 void verbosePrint(const int i){return verbosePrint((double) i);}
 
 /**
@@ -67,9 +65,9 @@ void verbosePrint(const int i){return verbosePrint((double) i);}
 double *  findBounds(const char * fileName,int columnToSearch = 0,int lineToStartAt = 0);
 
 /**
- * Returns the current time as a DString.
+ * Returns the current time as a std::string.
  */
-DString getTime();
+std::string getTime();
 
 /**
  * Reads the cluster file.
@@ -81,7 +79,6 @@ DString getTime();
  * @return Plane<Double> pointer.
  */
 Plane<utils::DStack<Double> > * parseClusterFile(const char* fileName, Double  resolution);
-Plane<utils::DStack<Double> > * parseClusterFile(DString fileName, Double resolution){return parseClusterFile(fileName.getString(),resolution);}
 
 
 void drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const char * fileName, int width, int height);
@@ -96,12 +93,12 @@ void stdout_help();
 int createSurfaceMassDensity(char* fileName, Double resolution, char* outLENS);
 
 bool runAsDaemon,useTimeStamp,scaleImage,drawImage;
-DString fileID;
+std::string fileID;
  double numberOfParticles,timeInSeconds, totalMass;
 double lineOfSight;//0=x,1=y,2=z
 double * xBounds;
 double * yBounds;
-DString clusterFilename,clusterOutBMP,clusterOutLENS;
+std::string clusterFilename,clusterOutBMP,clusterOutLENS;
 Double clusterResolution;
  double unitConversion;
 };

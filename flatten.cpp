@@ -42,16 +42,15 @@ int Flatten::parseArgs(int argc, char** argv)
     }
   
 	bool parsedParams = false;
-	DString bean;
+	std::string bean;
 	for(int i = 1;i<argc;i++)
 	{
-	  bean = argv[i];
+	  bean = utils::lower_case(argv[i]);
 		int j = i;
-		bean.toLowerCase();
 		if(bean == "--createsurfacemassdensity")
 		  {
 		    clusterFilename = argv[++j];
-		    DString resDString(argv[++j]);
+		    std::string resDString(argv[++j]);
 		    clusterResolution = Double(resDString);
 		    clusterOutLENS = argv[++j];
 		  }
@@ -62,14 +61,14 @@ int Flatten::parseArgs(int argc, char** argv)
 		else if(bean == "--findbounds")
 		  {
 
-		    DString fileName = argv[i+1];
+		    std::string fileName = argv[i+1];
 		    Double searchColumn(argv[i+2]);
 		    Double startingPoint(argv[i+3]);
 		    
-		    double * bounds = findBounds(fileName.toCharArray(),searchColumn.doubleValue(),startingPoint.doubleValue());
+		    double * bounds = findBounds(fileName.c_str(),searchColumn.doubleValue(),startingPoint.doubleValue());
 
-		    verbosePrint(DString("Maximum Value is ")+Double(bounds[2]).toDString()+ DString(" located at line ") + Double( bounds[0]).toDString());
-		    verbosePrint(DString("Minimum Value is ")+Double(bounds[3]).toDString()+ DString(" located at line ") + Double( bounds[1]).toDString());
+		    verbosePrint(std::string("Maximum Value is ")+Double(bounds[2]).str()+ std::string(" located at line ") + Double( bounds[0]).str());
+		    verbosePrint(std::string("Minimum Value is ")+Double(bounds[3]).str()+ std::string(" located at line ") + Double( bounds[1]).str());
 		    delete [] bounds;
 		    return 0;
 		  }		    
@@ -140,26 +139,26 @@ void Flatten::stdout_help()
 
 }
 
-void Flatten::verbosePrint(const DString bean)
+void Flatten::verbosePrint(const std::string bean)
 {
 #if __VERBOSE__
-  DString printString = bean;
-  DString timeMe = getTime();
+  std::string printString = bean;
+  std::string timeMe = getTime();
   if(useTimeStamp || runAsDaemon)
-    printString = timeMe.substring(0,timeMe.length() - 1) + DString(": ") + printString;
+    printString = timeMe.substr(0,timeMe.length() - 1) + std::string(": ") + printString;
 
   std::cout << printString << std::endl;
 #endif
 }
 
-DString Flatten::getTime()
+std::string Flatten::getTime()
 {
 
   time_t timey;
 
   time ( &timey );
 
-  return DString(ctime (&timey));
+  return std::string(ctime (&timey));
   
 
 }  
@@ -190,7 +189,7 @@ double *  Flatten::findBounds(const char * fileName,int columnToSearch,int lineT
       
       if(currentRow >= lineToStartAt)
 	{
-	  DString temp(buffer);
+	  std::string temp(buffer);
 	  
 	  StringTokenizer tokie(temp," ");
 	  
@@ -224,7 +223,7 @@ double *  Flatten::findBounds(const char * fileName,int columnToSearch,int lineT
 	    {
 	      if(de.getCode() == DavidException::STRING_TOKENIZER_ERROR_CODE)
 		{
-		  DEBUG_PRINT(DString("Column ") + Double(columnToSearch).toDString() + DString(" does not exist"));
+		  DEBUG_PRINT(std::string("Column ") + Double(columnToSearch).str() + std::string(" does not exist"));
 		}
 	      de.stdErr();
 	      throw de;
@@ -289,13 +288,13 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
   int outOfBox = 0;
   if(!readMe.is_open())
     {
-      throw DavidException(DString("Could not open: ") + fileName,DavidException::IO_ERROR_CODE);
+      throw DavidException(std::string("Could not open: ") + fileName,DavidException::IO_ERROR_CODE);
     }
   
   char buffer[256];
   bool keepGoing = true;
   
-  DEBUG_PRINT(DString("Reading ") + fileName);
+  DEBUG_PRINT(std::string("Reading ") + fileName);
 
   readMe.getline(buffer,256);
   DEBUG_PRINT(buffer);
@@ -317,8 +316,8 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
   DStack<Double> stacky;//particles in a column along the line of sight are stored in a stack. Then this stack is popped to sum the total particles, with weight if desired.
 
   Plane<DStack<Double> > * returnMe = new Plane<DStack<Double> >(resolution.toInt(),resolution.toInt(),stacky);
-  DString newHeader = DString("#total mass = ") + Double(totalMass).toDString() +DString(" solar masses. Dimensions ") + Double(resolution*pixelSize).toDString() + DString("x") + Double(resolution*pixelSize).toDString() + " kpc";
-  verbosePrint(DString("Parsing file: ") + fileName);
+  std::string newHeader = std::string("#total mass = ") + Double(totalMass).str() +std::string(" solar masses. Dimensions ") + Double(resolution*pixelSize).str() + std::string("x") + Double(resolution*pixelSize).str() + " kpc";
+  verbosePrint(std::string("Parsing file: ") + fileName);
   
   
   while(readMe.getline(buffer,256))
@@ -402,10 +401,10 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
 	}
     }  
 
-  DEBUG_PRINT(Double(1.0*returnMe->numberOfRows()).toDString() + DString(" by ") + Double(1.0*returnMe->numberOfColumns()).toDString() + " plane created: ");
+  DEBUG_PRINT(Double(1.0*returnMe->numberOfRows()).str() + std::string(" by ") + Double(1.0*returnMe->numberOfColumns()).str() + " plane created: ");
 
   DEBUG_PRINT(particleCounter << " total particles used with " << outOfBox << " particles out of the grid");
-  newHeader += DString("\n#Made with " ) + Double(particleCounter - outOfBox).toDString() + " total particles";
+  newHeader += std::string("\n#Made with " ) + Double(particleCounter - outOfBox).str() + " total particles";
   
   //Set Header
   if(newHeader != "")
@@ -445,7 +444,7 @@ void Flatten::drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const
       }
 
   image.WriteToFile(fileName);
-  verbosePrint(DString(fileName)+" has been written");
+  verbosePrint(std::string(fileName)+" has been written");
   #endif
 }
 
@@ -461,10 +460,10 @@ void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double
   fstream outfile(fileName,ios::out);
 
   if(!outfile.is_open()){
-    throw DavidException(DString("Could not open: ")+fileName,DavidException::IO_ERROR_CODE);
+    throw DavidException(std::string("Could not open: ")+fileName,DavidException::IO_ERROR_CODE);
   }
 
-  outfile << plane->getHeader()->getString() << std::endl;
+  outfile << plane->getHeader() << std::endl;
   outfile << width << std::endl;
   outfile << height << std::endl;
 
@@ -501,7 +500,7 @@ int Flatten::createSurfaceMassDensity(char* fileName, Double resolution, char* o
 		    
 #ifndef __USE_BOINC__
 		    if(drawImage)
-		      drawDStackPlane(cluster,clusterOutBMP.toCharArray(),cluster->numberOfRows(),cluster->numberOfColumns());
+		      drawDStackPlane(cluster,clusterOutBMP.c_str(),cluster->numberOfRows(),cluster->numberOfColumns());
 #endif
 		    writeDStackPlane(outLENS,cluster);
 
