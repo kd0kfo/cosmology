@@ -21,7 +21,7 @@
 #include <time.h>
 #endif
 
-#include "libdnstd/DString.h"
+#include "libdnstd/utils.h"
 #include "libdnstd/Double.h"
 #include "libdnstd/DRandom.h"
 #include "libdnstd/Complex.h"
@@ -115,12 +115,12 @@ int simulationSetup();
 int parseArgs(int argc, char** argv);
 
 /**
- * Parses the Parameter DString Array.
+ * Parses the Parameter std::string Array.
  * @param filename
- * @return DString*
+ * @return std::string*
  * @see loadParameters(double * params,double * lensParams,double ** sourceParams,int numParams, int numLensParams, int numberOfSources)
  */
-DString * paramParser(const char * fileName);//Size will be set in method. size is the size of the DString vector
+std::string * paramParser(const char * fileName);//Size will be set in method. size is the size of the std::string vector
 
 /**
  * Reads the Parameters from the Parameters file.
@@ -136,13 +136,13 @@ void loadParameters(double * params,double * lensParams,double ** sourceParams,i
 /**
  * Creates a 2 Dimensional Mass Array from lens parameters.
  */
-void createSurfaceMassDensity(DString parameters, DString fileName);
+void createSurfaceMassDensity(std::string parameters, std::string fileName);
 
 /**
- * Returns a DString containing the current time.
+ * Returns a std::string containing the current time.
  * Format: Wed May 16 16:44:42 2007
  */
-DString getTime();
+std::string getTime();
 
 /**
  * Takes the largest dimension of a Plane and makes it square.
@@ -152,7 +152,7 @@ DString getTime();
 void squarePlane(const char * fileName);
 
 
-DString fileNamePrefix;///< prefix of files created in the simulation
+std::string fileNamePrefix;///< prefix of files created in the simulation
 utils::DRandom * randy;///< Random number Generator.
 bool includeCricalCurveAndCaustic;///< Whether Critical Curves and Caustics should be used.
 Plane<math::Complex> * deflectionPlane;
@@ -161,18 +161,18 @@ char * sourceBMPFilename;
 bool runExistingDeflection;
 bool createDeflection;
 bool runSim;
-DString mainPrefix;
+std::string mainPrefix;
 bool runAsDaemon;
 int gridSpace;
 int overallParamNumber;
-DString * parameterArray;
-DString * savesourcelocations;
+std::string * parameterArray;
+std::string * savesourcelocations;
 Double bgColor;
 void drawEllipse(const char * parameters);
 Plane<Double> * lensMassDensity;
 void verbosePrint(const char * string);
-void verbosePrint(DString string){return verbosePrint(string.toCharArray());}
-void verbosePrint(double string){return verbosePrint(Double(string).toDString());}
+void verbosePrint(std::string string){return verbosePrint(string.c_str());}
+void verbosePrint(double val){return verbosePrint(Double(val).str().c_str());}
 int * glellipseBounds;
 bool useTimeStamp;
 bool drawRemovedArea;

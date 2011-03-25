@@ -87,7 +87,7 @@ int sub_main(int argc, char** argv)
   int returnMe = 0;
 
   try{
-    DString startMessage = "ray_trace_ellipse started";
+    std::string startMessage = "ray_trace_ellipse started";
     if(runAsDaemon)
       startMessage += " as daemon process.";
     verbosePrint(startMessage);
@@ -97,9 +97,9 @@ int sub_main(int argc, char** argv)
     {
 
 #ifdef __DEBUG__
-      DEBUG_PRINT(DString("Type: ") + de.getType());
-      DEBUG_PRINT(DString("Code: ") + Double(de.getCode()).toDString());
-      DEBUG_PRINT(DString("Message: "));
+      DEBUG_PRINT(std::string("Type: ") + de.getType());
+      DEBUG_PRINT(std::string("Code: ") + Double(de.getCode()).str());
+      DEBUG_PRINT(std::string("Message: "));
 #endif
 
 
@@ -158,20 +158,21 @@ int simulationSetup()
   //Run once per source
   for(int i = 0; i<numberOfSources;i++)
     {
-      verbosePrint(DString("Sim ") + Double(i+1).toDString() + DString(" of ") + Double(numberOfSources) + ": ");
+      using std::string;
+      verbosePrint(string("Sim ") + Double(i+1).str() + string(" of ") + Double(numberOfSources).str() + ": ");
 
-      fileNamePrefix = mainPrefix + Double((double) i).toDString();
-      DString fullLensFilename = fileNamePrefix  + "lensedimage.bmp";
+      fileNamePrefix = mainPrefix + Double((double) i).str();
+      std::string fullLensFilename = fileNamePrefix  + "lensedimage.bmp";
       simulation(lens,sources, massDensity, 1,i,3,i);
 
 
 #ifndef __USE_BOINC__
-      lens->draw(fullLensFilename.getString(),false,gridSpace > 0,gridSpace);
+      lens->draw(fullLensFilename,false,gridSpace > 0,gridSpace);
 		
-      DString fullSourceFilename = fileNamePrefix + "sources.bmp";
+      std::string fullSourceFilename = fileNamePrefix + "sources.bmp";
       DEBUG_PRINT("Drawing sources");
       DEBUG_PRINT(sources);
-      sources->draw(fullSourceFilename.getString(),false,gridSpace > 0,gridSpace);
+      sources->draw(fullSourceFilename,false,gridSpace > 0,gridSpace);
 #endif
       DEBUG_PRINT("DELETING");
       delete lens;
@@ -188,11 +189,11 @@ int simulationSetup()
   if(numberOfSources > 1)
     {
       verbosePrint("Combined Sim");
-      fileNamePrefix = mainPrefix + Double(numberOfSources).toDString();
+      fileNamePrefix = mainPrefix + Double(numberOfSources).str();
       simulation(lens,sources, massDensity, numberOfSources,-1,0,numberOfSources);
 #ifndef __USE_BOINC__
-      lens->draw((fileNamePrefix+"lensedimage.bmp").getString(),false,gridSpace < 0,gridSpace);
-      sources->draw((fileNamePrefix+"sources.bmp").getString(),false,gridSpace < 0,gridSpace);
+      lens->draw(fileNamePrefix+"lensedimage.bmp",false,gridSpace < 0,gridSpace);
+      sources->draw(fileNamePrefix+"sources.bmp",false,gridSpace < 0,gridSpace);
 #endif
     }
 
@@ -273,9 +274,9 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
       if(runExistingDeflection)
 	{
 	  // USE EXISTING DEFLECTION PLANE
-	  DString deflectionFilename(lensMassDeflectionPlane);
+	  std::string deflectionFilename(lensMassDeflectionPlane);
 	  
-	  verbosePrint(DString("Parsing Deflection Plane: ")+deflectionFilename);
+	  verbosePrint(std::string("Parsing Deflection Plane: ")+deflectionFilename);
 	  deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
 			
 	  if(deflectionPlane == 0)
@@ -286,7 +287,7 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	{
 
 	  // CREATE NEW DEFLECTION PLANE 
-	  verbosePrint(DString("Creating Deflection Plane: ") + lensMassDeflectionPlane);
+	  verbosePrint(std::string("Creating Deflection Plane: ") + lensMassDeflectionPlane);
 	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,offset);
 	  if(gls[i].getDeflectionPlane() != 0)
 	    gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
@@ -347,7 +348,7 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 
       if(savesourcelocations != 0 && sourceLocations != 0)
 	{
-	  verbosePrint(DString("Writing source plane to ") + *savesourcelocations);
+	  verbosePrint(std::string("Writing source plane to ") + *savesourcelocations);
 	  sourceLocations->savePlane(*savesourcelocations);
 	}
     }//end if(runsim)
@@ -444,8 +445,8 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 //If a specific sources is wanted specify it in specificSource, else specificSource < 0
 bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSources, utils::DRandom * randy, bool useRandom, int numberOfPixels)
 {
-  DString fullFileName = fileNamePrefix+"sourceinfo.txt";
-  std::ofstream sourceLOC(fullFileName.toCharArray());
+  std::string fullFileName = fileNamePrefix+"sourceinfo.txt";
+  std::ofstream sourceLOC(fullFileName.c_str());
 
   int N = numberOfPixels;
 
@@ -556,10 +557,10 @@ bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSou
  */
 bool writeParameters(double * params,double * lensParams,double ** sourceParams, int numberOfSources)
 {
-  DString fullFileName = fileNamePrefix+"human-parameters.txt";
-  DString fullFileName2 = fileNamePrefix+"parameters.txt";
-  std::ofstream outfile(fullFileName.toCharArray());
-  std::ofstream outfile2(fullFileName2.toCharArray());
+  std::string fullFileName = fileNamePrefix+"human-parameters.txt";
+  std::string fullFileName2 = fileNamePrefix+"parameters.txt";
+  std::ofstream outfile(fullFileName.c_str());
+  std::ofstream outfile2(fullFileName2.c_str());
   using namespace std;
 
   int numParams = 6;
@@ -760,8 +761,7 @@ int parseArgs(int argc, char** argv)
 
   for(int i = 0;i<argc;i++)
     {
-      DString bean(argv[i]);
-	  bean.toLowerCase();
+      std::string bean = utils::lower_case(argv[i]);
       if(bean == "--newlens")
 	{
 	  DEBUG_PRINT("newlens");
@@ -830,15 +830,15 @@ int parseArgs(int argc, char** argv)
 	}
       else if(bean == "--createsurfacemassdensity")
 	{
-	  DString parameters = argv[i+1];
-	  DString fileName = argv[i+2];
+	  std::string parameters = argv[i+1];
+	  std::string fileName = argv[i+2];
 	  createSurfaceMassDensity(parameters,fileName);
 
 	  return 0;
 	}
       else if(bean == "--usesurfacemassdensity")
 	{
-	  DString fileName = argv[i+1];
+	  std::string fileName = argv[i+1];
 	  lensMassDensity = Plane<Double>::readPlane(fileName);
 	}
       else if(bean == "--daemon")
@@ -854,7 +854,7 @@ int parseArgs(int argc, char** argv)
 	  if(argc < i+4)
 	    throw DavidException("I need to two planes to add and a file name for the sum.","Insufficient Arguments",DavidException::INVALID_ARGUMENT_ERROR_CODE);
 
-	  DString left,right,out;
+	  std::string left,right,out;
 	  left = argv[i+1];
 	  right = argv[i+2];
 	  out = argv[i+3];
@@ -865,11 +865,11 @@ int parseArgs(int argc, char** argv)
 	  Plane<Complex> * rightPlane = new Plane<Complex>(0,0,zero);
 	  leftPlane = Plane<Complex>::readPlane(left);
 	  rightPlane = Plane<Complex>::readPlane(right);
-	  verbosePrint(DString("Adding ")+left + DString(" to ") + right);
+	  verbosePrint(std::string("Adding ")+left + std::string(" to ") + right);
 	  DEBUG_PRINT(leftPlane);
 	  Plane<Complex> * outPlane = Plane<Complex>::addPlanes(leftPlane,rightPlane);
 		    
-	  verbosePrint(DString("Saving sum as ")+out);
+	  verbosePrint(std::string("Saving sum as ")+out);
 	  outPlane->savePlane(out);
 
 	  delete leftPlane;
@@ -886,15 +886,15 @@ int parseArgs(int argc, char** argv)
 	  Complex zero(0,0);
 	  Plane<Complex> * leftPlane = new Plane<Complex>(0,0,zero);
 	  Plane<Complex> * rightPlane = new Plane<Complex>(0,0,zero);
-	  DString left,right,out;
+	  std::string left,right,out;
 		    
 	  leftPlane = Plane<Complex>::readPlane(left = argv[i+1]);
 	  rightPlane = Plane<Complex>::readPlane(right = argv[i+2]);
 		    
-	  verbosePrint(DString("Subtracting ") + left + DString(" and ") + right);
+	  verbosePrint(std::string("Subtracting ") + left + std::string(" and ") + right);
 	  Plane<Complex> * outPlane = Plane<Complex>::subtractPlanes(leftPlane,rightPlane);
 
-	  verbosePrint(DString("Saving difference as ")+(out = argv[i+3]));
+	  verbosePrint(std::string("Saving difference as ")+(out = argv[i+3]));
 	  outPlane->savePlane(out);
 
 	  delete leftPlane;
@@ -915,7 +915,7 @@ int parseArgs(int argc, char** argv)
 	}
       else if(bean == "--savesourcelocations")
 	{
-	  savesourcelocations = new DString(argv[i+1]);
+	  savesourcelocations = new std::string(argv[i+1]);
 	}
       else if(bean == "--drawremovedarea")
 	{
@@ -989,11 +989,11 @@ int parseArgs(int argc, char** argv)
 
 /**
  * This Method Parses Parameters from a text file and returns them as
- * an entry in a DString Array. The first three entries are the Number of General Parameters,
+ * an entry in a std::string Array. The first three entries are the Number of General Parameters,
  * Number of Lens Parameters and Number of Sources, respectively. So the total array size is
  * (Number of General Parameters) + (Number of Lens Parameters) + 7*(Number of Sources)
  */
-DString * paramParser(const char * fileName)
+std::string * paramParser(const char * fileName)
 {
   std::ifstream infile(fileName);
   using namespace std;
@@ -1001,8 +1001,9 @@ DString * paramParser(const char * fileName)
   int stringSize = 150;
   int totalParams, numParams, numLensParams, sourceNumber;
 	
-  DString * paramsVector;
+  std::string * paramsVector;
   int vectorCount = 0;
+  size_t npos = std::string::npos;
 
   if(infile.is_open())
     {
@@ -1010,40 +1011,40 @@ DString * paramParser(const char * fileName)
 
       char * curr = new char[stringSize];
       infile.getline(curr,stringSize);
-      DString currDString(curr);
-      if(currDString.contains(';'))
-		currDString = currDString.substring(0,currDString.indexOf(";"));
-      tmp = Double::parseDString(currDString);
+      std::string currDString(curr);
+      if(currDString.find(";") != npos)
+		currDString = currDString.substr(0,currDString.find(";"));
+      tmp = Double::parseString(currDString);
       numParams = (int) tmp.doubleValue();
 
       curr = new char[stringSize];
       infile.getline(curr,stringSize);
       currDString = curr;
-      if(currDString.contains(';'))
-	currDString = currDString.substring(0,currDString.indexOf(";"));
-      numLensParams = (int) Double::parseDString(currDString).doubleValue();
+      if(currDString.find(';') != npos)
+	currDString = currDString.substr(0,currDString.find(";"));
+      numLensParams = (int) Double::parseString(currDString).doubleValue();
 
       curr = new char[stringSize];
       infile.getline(curr,stringSize);
       currDString = curr;
-      if(currDString.contains(';'))
-	currDString = currDString.substring(0,currDString.indexOf(";"));
-      sourceNumber = (int) Double::parseDString(currDString).doubleValue();
+      if(currDString.find(';') != npos)
+	currDString = currDString.substr(0,currDString.find(";"));
+      sourceNumber = (int) Double::parseString(currDString).doubleValue();
 		
       totalParams = numParams + numLensParams + sourceNumber*7 + 3 +1;//+3 to include the total number of parameters(eg numParams) +1 for critical curve inclusion (0 = false, 1 = true)
 		
-      paramsVector = new DString[totalParams];
-      paramsVector[vectorCount++] = Double((double) numParams).toDString();
-      paramsVector[vectorCount++] = Double((double) numLensParams).toDString();
-      paramsVector[vectorCount++] = Double((double) sourceNumber).toDString();
+      paramsVector = new std::string[totalParams];
+      paramsVector[vectorCount++] = Double((double) numParams).str();
+      paramsVector[vectorCount++] = Double((double) numLensParams).str();
+      paramsVector[vectorCount++] = Double((double) sourceNumber).str();
 		
       for(int i = 0;i< totalParams - 3;i++)
 	{
 	  curr = new char[stringSize];
 	  infile.getline(curr,stringSize);
 	  currDString = curr;
-	  if(currDString.contains(';'))
-	    currDString = currDString.substring(0,currDString.indexOf(";"));
+	  if(currDString.find(';') != npos)
+	    currDString = currDString.substr(0,currDString.find(";"));
 	  paramsVector[vectorCount++] = currDString;
 	}
 
@@ -1104,9 +1105,9 @@ void drawEllipse(const char * parameters)
   using utils::StringTokenizer;
   using utils::PlaneCreator;
 
-  DString params(parameters);
+  std::string params(parameters);
 
-  DString a,e,width,height,x,y,R,G,B,filename;
+  std::string a,e,width,height,x,y,R,G,B,filename;
 
   StringTokenizer tokie(params,",");
 
@@ -1137,7 +1138,7 @@ void drawEllipse(const char * parameters)
   newPlane->addEllipse(A, E, X, Y, object);
   Plane<Double> * planizzle = newPlane->getPlane();
 	
-  verbosePrint(DString("Drawing ")+filename);
+  verbosePrint(std::string("Drawing ")+filename);
   planizzle->draw(filename);
 	
   delete newPlane;
@@ -1145,9 +1146,9 @@ void drawEllipse(const char * parameters)
 
 }
 
-void createSurfaceMassDensity(DString parameters, DString fileName)
+void createSurfaceMassDensity(std::string parameters, std::string fileName)
 {
-  parameterArray = paramParser(parameters.toCharArray());
+  parameterArray = paramParser(parameters.c_str());
 
   int numberOfSources = 1;
   double * params = new double[6];
@@ -1172,14 +1173,14 @@ void createSurfaceMassDensity(DString parameters, DString fileName)
 
 }
 
-DString getTime()
+std::string getTime()
 {
 
   time_t timey;
 
   time ( &timey );
 
-  return DString(ctime (&timey));
+  return std::string(ctime (&timey));
   
 
 }
@@ -1189,12 +1190,12 @@ void verbosePrint(const char * string)
 {
 
 #if __VERBOSE__
-  DString printString(string);
+  std::string printString(string);
 
   if(runAsDaemon || useTimeStamp)
     {
-      DString timeMe = getTime();
-      printString = timeMe.substring(0,timeMe.length() - 1) + DString(": ") + printString;
+      std::string timeMe = getTime();
+      printString = timeMe.substr(0,timeMe.length() - 1) + std::string(": ") + printString;
     }
 
   std::cout << printString << std::endl;

@@ -119,8 +119,9 @@ static void daemonize( const char *lockfile )
     freopen( "mydaemon.out", "a", stdout);
     freopen( "mydaemon.out", "a", stderr);
 
-    DString pidString = Double((double) getpid()).toDString();
-	write(lfp,pidString.toCharArray(),pidString.length());
+    std::ostringstream pidString;
+    pidString << getpid();
+    write(lfp,pidString.str().c_str(),pidString.str().size());
     
 	/* Tell the parent process that we are A-okay */
     kill( parent, SIGUSR1 );
