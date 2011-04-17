@@ -4,8 +4,8 @@ COMPILER = c++ -fpermissive -w -D__VERBOSE__ -D__DEBUG__ -static -g -O0
 #COMPILER = c++ -fpermissive -w -D__VERBOSE__ -static
 SUFFIX = 
 
-LIBDNSTD_PATH =/home/dcoss/tmp/blah/libdnstd/install
-LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
+LIBDNSTD_PATH =/home/dcoss/opt/libdnstd/install
+LIBMYGL_PATH = /home/dcoss/opt/libmygl/install
 FFTW_PATH = $(HOME)/opt/fftw
 MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
 
