@@ -1,9 +1,9 @@
-LIBDNSTD_PATH =/home/dcoss/tmp/blah/libdnstd/install
-LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
-FFTW_PATH = $(HOME)/opt/fftw
-MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
+#LIBDNSTD_PATH =/home/dcoss/tmp/blah/libdnstd/install
+#LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
+#FFTW_PATH = $(HOME)/opt/fftw
+#MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
 
-bin_PROGRAMS: ray_trace_ellipse flatten  physcalc makecluster
+bin_PROGRAMS = ray_trace_ellipse flatten  physcalc makecluster
 
 ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
 ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/

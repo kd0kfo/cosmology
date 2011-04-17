@@ -5,6 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT(mycosmo, 1.0, david@davecoss.com)
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CXX
@@ -30,6 +31,19 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+AM_PROG_CC_C_O
+
+#libdnstd
+AC_ARG_WITH([libdnstd],AS_HELP_STRING([--with-libdnstd@<:@=dir@:>@],[Include libdnstd library @<:@Default=PREFIX/include@:>@]),with_libdnstd=${withval},AC_MSG_RESULT(Assuming libdnstd is installed in system paths))
+if test x$with_libdnstd != x; then
+   AC_SUBST(LIBDNSTD_PATH,$with_libdnstd)
+fi
+
+#libmygl
+AC_ARG_WITH([libmygl],AS_HELP_STRING([--with-libmygl@<:@=dir@:>@],[Include libmygl library @<:@Default=PREFIX/include@:>@]),with_libmygl=${withval},AC_MSG_RESULT(Assuming libmygl is installed in system paths))
+if test x$with_libmygl != x; then
+   AC_SUBST(LIBMYGL_PATH,$with_libmygl)
+fi
 
 # Checks for library functions.
 AC_FUNC_FORK
