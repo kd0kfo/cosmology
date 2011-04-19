@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include "libmygl/plane.h"
+
+struct calcval{double re,im;};
 /* Function type.  */
      typedef double (*func_t) (double);
      

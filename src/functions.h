@@ -8,7 +8,7 @@
 #include "libdnstd/Double.h"
 #include "symrec.h"
 
-extern double ans[];
+extern struct calcval ans;
 typedef Plane<math::Complex> plane_t;
 
 plane_t *create_plane(double n, double m)
