@@ -45,6 +45,13 @@ if test x$with_libmygl != x; then
    AC_SUBST(LIBMYGL_PATH,$with_libmygl)
 fi
 
+#fftw3
+AC_ARG_WITH([fftw3],AS_HELP_STRING([--with-fftw3@<:@=dir@:>@],[Include fftw3 library @<:@Default=PREFIX/include@:>@]),with_fftw3=${withval},AC_MSG_RESULT(Assuming fftw3 is installed in system paths))
+if test x$with_fftw3 != x; then
+   AC_SUBST(FFTW3_PATH,$with_fftw3)
+fi
+
+
 # Checks for library functions.
 AC_FUNC_FORK
 AC_FUNC_MALLOC

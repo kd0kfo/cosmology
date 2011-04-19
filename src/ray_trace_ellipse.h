@@ -47,7 +47,7 @@
 #define DAEMON_NAME "ray_trace_ellipse"
 #endif
 
-template class Plane<math::Complex>;
+//template class Plane<math::Complex>;
 
 
 /** \mainpage Documentation of the Main Executables.

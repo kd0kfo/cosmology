@@ -70,7 +70,7 @@ class Create_Cluster
    * coreRadius = parameters[0];
    * maximumDistance = parameters[1];
    */
-  double Create_Cluster::getNSISDistance(double const * const position, double const * const parameters)const;
+  double getNSISDistance(double const * const position, double const * const parameters)const;
 
   /**
    * Uniform Ellipse
@@ -82,7 +82,7 @@ class Create_Cluster
    * parameters[1] = semi-major axis length
    *
    */
-  Double Create_Cluster::getUniformEllipseDistance(double const * const position,double const * const parameters)const;
+  Double getUniformEllipseDistance(double const * const position,double const * const parameters)const;
 
   utils::DRandom * randy;
 

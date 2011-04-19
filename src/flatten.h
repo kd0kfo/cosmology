@@ -90,7 +90,7 @@ void writeDStackPlane(const char * fileName, Plane<utils::DStack<Double> > * pla
  */
 void stdout_help();
 
-int createSurfaceMassDensity(char* fileName, Double resolution, char* outLENS);
+int createSurfaceMassDensity(const char* fileName, Double resolution, const char* outLENS);
 
 bool runAsDaemon,useTimeStamp,scaleImage,drawImage;
 std::string fileID;

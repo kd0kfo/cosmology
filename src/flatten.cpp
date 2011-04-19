@@ -492,7 +492,7 @@ void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double
   outfile.close();
 }
 
-int Flatten::createSurfaceMassDensity(char* fileName, Double resolution, char* outLENS)
+int Flatten::createSurfaceMassDensity(const char* fileName, Double resolution, const char* outLENS)
 {
 		    using utils::DStack;
 		    
