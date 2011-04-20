@@ -29,5 +29,6 @@ makecluster_LDADD = -lmygl -ldnstd
 
 
 if BUILD_WITH_MPI
+ray_trace_ellipse_SOURCES +=  mpi_utils.cpp
 ray_trace_ellipse_CPPFLAGS += -I${MPI_PATH}/include
 endif

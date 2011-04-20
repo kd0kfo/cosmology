@@ -41,7 +41,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = ray_trace_ellipse$(EXEEXT) flatten$(EXEEXT) \
 	physcalc$(EXEEXT) makecluster$(EXEEXT)
-am__append_1 = -I${MPI_PATH}/include
+am__append_1 = mpi_utils.cpp
+am__append_2 = -I${MPI_PATH}/include
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	physcalc.lex.cpp physcalc.yacc.cpp physcalc.yacc.h
@@ -67,8 +68,12 @@ am_physcalc_OBJECTS = physcalc-physcalc.yacc.$(OBJEXT) \
 	physcalc-physcalc.lex.$(OBJEXT)
 physcalc_OBJECTS = $(am_physcalc_OBJECTS)
 physcalc_DEPENDENCIES =
+am__ray_trace_ellipse_SOURCES_DIST = ray_trace_ellipse.cpp \
+	mpi_utils.cpp
+am__objects_1 =  \
+	ray_trace_ellipse-mpi_utils.$(OBJEXT)
 am_ray_trace_ellipse_OBJECTS =  \
-	ray_trace_ellipse-ray_trace_ellipse.$(OBJEXT)
+	ray_trace_ellipse-ray_trace_ellipse.$(OBJEXT) $(am__objects_1)
 ray_trace_ellipse_OBJECTS = $(am_ray_trace_ellipse_OBJECTS)
 ray_trace_ellipse_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -88,29 +93,29 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(flatten_SOURCES) $(makecluster_SOURCES) \
 	$(physcalc_SOURCES) $(ray_trace_ellipse_SOURCES)
 DIST_SOURCES = $(flatten_SOURCES) $(makecluster_SOURCES) \
-	$(physcalc_SOURCES) $(ray_trace_ellipse_SOURCES)
+	$(physcalc_SOURCES) $(am__ray_trace_ellipse_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run aclocal-1.9
 ALLOCA = 
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run tar
-AUTOCONF = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run automake-1.9
+AMTAR = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run tar
+AUTOCONF = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run automake-1.9
 AWK = gawk
 BUILD_WITH_MPI_FALSE = #
 BUILD_WITH_MPI_TRUE = 
 CC = mpicc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2
+CFLAGS = -D__DEBUG__ -ggdb -O0
 CPP = mpicc -E
 CPPFLAGS = 
 CXX = mpic++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXFLAGS = -D__DEBUG__ -ggdb -O0
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -124,7 +129,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LDFLAGS = 
+LDFLAGS = -D__DEBUG__ -ggdb -O0
 LEX = flex
 LEXLIB = -lfl
 LEX_OUTPUT_ROOT = lex.yy
@@ -133,20 +138,20 @@ LIBMYGL_PATH = /home/dcoss/tmp/tmp/libmygl/install
 LIBOBJS = 
 LIBS = 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/dcoss/tmp/tmp/cosmology/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run makeinfo
 MPI_PATH = /home/dcoss/opt/openmpi
 OBJEXT = o
 PACKAGE = mycosmo
 PACKAGE_BUGREPORT = david@davecoss.com
 PACKAGE_NAME = mycosmo
-PACKAGE_STRING = mycosmo 1.1
+PACKAGE_STRING = mycosmo 1.2
 PACKAGE_TARNAME = mycosmo
-PACKAGE_VERSION = 1.1
+PACKAGE_VERSION = 1.2
 PATH_SEPARATOR = :
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 1.1
+VERSION = 1.2
 YACC = bison -y
 ac_ct_CC = mpicc
 ac_ct_CXX = mpic++
@@ -167,7 +172,7 @@ exec_prefix = ${prefix}
 host_alias = 
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /home/dcoss/tmp/tmp/cosmology/install-sh
+install_sh = /home/dcoss/tmp/tmp/c/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
@@ -180,9 +185,9 @@ sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 sysconfdir = ${prefix}/etc
 target_alias = 
-ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
+ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp $(am__append_1)
 ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/ \
-	-I$(LIBDNSTD_PATH)/include/ $(am__append_1)
+	-I$(LIBDNSTD_PATH)/include/ $(am__append_2)
 ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
 ray_trace_ellipse_LDADD = -lmygl -ldnstd
 flatten_SOURCES = flattenmain.cpp flatten.cpp
@@ -284,6 +289,7 @@ include ./$(DEPDIR)/makecluster-create_cluster.Po
 include ./$(DEPDIR)/makecluster-makecluster.Po
 include ./$(DEPDIR)/physcalc-physcalc.lex.Po
 include ./$(DEPDIR)/physcalc-physcalc.yacc.Po
+include ./$(DEPDIR)/ray_trace_ellipse-mpi_utils.Po
 include ./$(DEPDIR)/ray_trace_ellipse-ray_trace_ellipse.Po
 
 .cpp.o:
@@ -397,6 +403,20 @@ ray_trace_ellipse-ray_trace_ellipse.obj: ray_trace_ellipse.cpp
 #	source='ray_trace_ellipse.cpp' object='ray_trace_ellipse-ray_trace_ellipse.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ray_trace_ellipse-ray_trace_ellipse.obj `if test -f 'ray_trace_ellipse.cpp'; then $(CYGPATH_W) 'ray_trace_ellipse.cpp'; else $(CYGPATH_W) '$(srcdir)/ray_trace_ellipse.cpp'; fi`
+
+ray_trace_ellipse-mpi_utils.o: mpi_utils.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ray_trace_ellipse-mpi_utils.o -MD -MP -MF "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo" -c -o ray_trace_ellipse-mpi_utils.o `test -f 'mpi_utils.cpp' || echo '$(srcdir)/'`mpi_utils.cpp; \
+	then mv -f "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo" "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Po"; else rm -f "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo"; exit 1; fi
+#	source='mpi_utils.cpp' object='ray_trace_ellipse-mpi_utils.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ray_trace_ellipse-mpi_utils.o `test -f 'mpi_utils.cpp' || echo '$(srcdir)/'`mpi_utils.cpp
+
+ray_trace_ellipse-mpi_utils.obj: mpi_utils.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ray_trace_ellipse-mpi_utils.obj -MD -MP -MF "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo" -c -o ray_trace_ellipse-mpi_utils.obj `if test -f 'mpi_utils.cpp'; then $(CYGPATH_W) 'mpi_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/mpi_utils.cpp'; fi`; \
+	then mv -f "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo" "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Po"; else rm -f "$(DEPDIR)/ray_trace_ellipse-mpi_utils.Tpo"; exit 1; fi
+#	source='mpi_utils.cpp' object='ray_trace_ellipse-mpi_utils.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ray_trace_ellipse-mpi_utils.obj `if test -f 'mpi_utils.cpp'; then $(CYGPATH_W) 'mpi_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/mpi_utils.cpp'; fi`
 
 .lpp.cpp:
 	$(LEXCOMPILE) $<

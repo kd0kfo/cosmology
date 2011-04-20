@@ -3,19 +3,6 @@
  */
 #include "ray_trace_ellipse.h"
 
-int init_mpi(int *argc, char ***argv, int *mpi_rank, int *mpi_size)
-{
-  int retval = 0;
-  retval = MPI_Init(argc,argv);
-  if(retval)
-    return retval;
-  
-  retval = MPI_Comm_rank(MPI_COMM_WORLD,mpi_rank);
-  if(retval)
-    return retval;
-  retval = MPI_Comm_size(MPI_COMM_WORLD,mpi_size);
-  return retval;
-}
 
 #ifndef __USE_BOINC__
 int main(int argc, char** argv)
@@ -24,7 +11,7 @@ int main(int argc, char** argv)
   try
     {
 #ifdef USE_MPI
-      retval = init_mpi(&argc,&argv,&mpi_data.rank,&mpi_data.num_ranks);
+      retval = utils::init_mpi(&argc,&argv,&mpi_data.rank,&mpi_data.num_ranks);
       if(retval)
 	{
 	  char msg[MPI_MAX_ERROR_STRING];
@@ -45,7 +32,9 @@ int main(int argc, char** argv)
     }
   catch(DavidException de)
     {
-      
+#ifdef USE_MPI
+      std::cerr << "Process of Rank " << mpi_data.rank  << "on host " << mpi_data.hostname << std::endl;
+#endif
       std::cerr << "*************" << std::endl << "Program Ended due to " << de.getCause() << std::endl;
       std::cerr << "The following message was provided:" << std::endl;
       de.stdErr();
@@ -66,7 +55,6 @@ int main(int argc, char** argv)
 
 int super_main(int argc, char** argv)
 {
-
   runAsDaemon = false;
 
   mainPrefix = "run-";
@@ -79,6 +67,8 @@ int super_main(int argc, char** argv)
 	
   lensMassDensity = 0;
 
+  lensMassDeflectionPlane= strdup("lens");
+
   offset = 0;
 	
   gridSpace = -1000;
@@ -90,12 +80,19 @@ int super_main(int argc, char** argv)
     glellipseBounds[i] = -1;
 
   useTimeStamp = false;
-  int returnizzle = parseArgs(argc,argv);
-  if( returnizzle != -42)
-    return returnizzle;
+  int retval = parseArgs(argc,argv);
+  if( retval != -42)
+    {
+      free(lensMassDeflectionPlane);
+      return retval;
+    }
 
   if(!runAsDaemon)
-    return sub_main(argc, argv);
+    {
+      retval = sub_main(argc, argv);
+      free(lensMassDeflectionPlane);
+      return retval;
+    }
 
   int returnValue = 0;
 	
@@ -117,6 +114,8 @@ int super_main(int argc, char** argv)
   syslog( LOG_NOTICE, "terminated" );
   closelog();
 #endif
+      
+  free(lensMassDeflectionPlane);
   return returnValue;
 }
 
@@ -183,10 +182,10 @@ int simulationSetup()
   Double zeroDouble(0.0);
   Plane<Double> * lens = new Plane<Double>(width,height, bgColor);
 
-#ifdef __USE_BOINC__
   Plane<Double> * sources = 0;
-#else
-  Plane<Double> * sources = Plane<Double>::bmpToPlane(sourceBMPFilename);
+#ifndef __USE_BOINC__
+  if(access(sourceBMPFilename,R_OK) == 0)
+    sources = Plane<Double>::bmpToPlane(sourceBMPFilename);
 #endif
   Plane<Double> * lensMassPlane = new Plane<Double>(width,height, zeroDouble);
   Plane<math::Complex> * deflectionPlane = 0;
@@ -327,8 +326,17 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	  // CREATE NEW DEFLECTION PLANE 
 	  verbosePrint(std::string("Creating Deflection Plane: ") + lensMassDeflectionPlane);
 	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,offset);
+
 	  if(gls[i].getDeflectionPlane() != 0)
-	    gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+	    {
+#ifdef USE_MPI
+	      utils::mpi_recombine(gls[i]);
+	      MPI_Barrier(MPI_COMM_WORLD);
+	      if(mpi_data.rank == utils::MASTER)
+		gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);#else
+	      gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+#endif
+	    }
 	}
       if(!createDeflection && !runExistingDeflection)
 	{

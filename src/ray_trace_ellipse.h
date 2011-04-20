@@ -26,6 +26,8 @@
 
 
 #include "defines.h"
+#include "structs.h"
+
 
 #ifndef _WIN32
 #include <cstdio>
@@ -45,15 +47,8 @@
 
 
 #ifdef USE_MPI
-#include <mpi.h>
+#include "mpi_utils.h"
 
-#define MPI_MASTER 0
-
-typedef struct{
-  int rank;
-  int num_ranks;
-  std::string hostname;
-}MPIData;
 MPIData mpi_data;
 
 #endif
