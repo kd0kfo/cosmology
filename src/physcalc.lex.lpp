@@ -29,12 +29,12 @@ void yyerror(const char *);
         }
 
 [0-9]*\.[0-9]+ {
-                  sscanf(yytext,"%f",&yylval.val.re);yylval.val.im = 0;
+                  yylval.val.re = atof(yytext);yylval.val.im = 0;
                   return NUM;
               }
 
 [0-9]*    {
-	sscanf(yytext,"%i",&yylval.val.re);yylval.val.im = 0.0;
+	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
             return NUM;
           }
 

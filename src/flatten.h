@@ -4,7 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include <math.h>
+#include <cmath>
+#include <deque>
 
 #include "libdnstd/DavidException.h"
 #include "libdnstd/StringTokenizer.h"
@@ -78,12 +79,12 @@ std::string getTime();
  * @param yWidth int increment of width of y values in the Plane
  * @return Plane<Double> pointer.
  */
-Plane<utils::DStack<Double> > * parseClusterFile(const char* fileName, Double  resolution);
+Plane<std::deque<Double> > * parseClusterFile(const char* fileName, Double  resolution);
 
 
-void drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const char * fileName, int width, int height);
+void drawdequePlane(Plane<std::deque<Double> > * planeToPrint,const char * fileName, int width, int height);
 
-void writeDStackPlane(const char * fileName, Plane<utils::DStack<Double> > * plane);
+void writedequePlane(const char * fileName, Plane<std::deque<Double> > * plane);
 
 /**
  * Prints the help information

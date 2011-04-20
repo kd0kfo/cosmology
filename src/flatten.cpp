@@ -235,11 +235,11 @@ double *  Flatten::findBounds(const char * fileName,int columnToSearch,int lineT
   
 }
 
-Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, Double resolution)
+Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Double resolution)
 {
   using namespace std;
   using utils::StringTokenizer;
-  using utils::DStack;
+  using std::deque;
 
   double xInc, yInc;
 
@@ -313,9 +313,9 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
   numberOfParticles = Double(tokie.nextToken()).doubleValue();//total particle count
   DEBUG_PRINT(numberOfParticles << " total particles");
 
-  DStack<Double> stacky;//particles in a column along the line of sight are stored in a stack. Then this stack is popped to sum the total particles, with weight if desired.
+  deque<Double> stacky;//particles in a column along the line of sight are stored in a stack. Then this stack is popped to sum the total particles, with weight if desired.
 
-  Plane<DStack<Double> > * returnMe = new Plane<DStack<Double> >(resolution.toInt(),resolution.toInt(),stacky);
+  Plane<deque<Double> > * returnMe = new Plane<deque<Double> >(resolution.toInt(),resolution.toInt(),stacky);
   std::string newHeader = std::string("#total mass = ") + Double(totalMass).str() +std::string(" solar masses. Dimensions ") + Double(resolution*pixelSize).str() + std::string("x") + Double(resolution*pixelSize).str() + " kpc";
   verbosePrint(std::string("Parsing file: ") + fileName);
   
@@ -395,8 +395,8 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
 	}
       else
 	{
-	  DStack<Double> previousStack = returnMe->getValue(x,y);
-	  previousStack.push(Z.doubleValue());
+	  deque<Double> previousStack = returnMe->getValue(x,y);
+	  previousStack.push_back(Z.doubleValue());
 	  returnMe->setValue(x,y,previousStack);
 	}
     }  
@@ -413,7 +413,7 @@ Plane<utils::DStack<Double> > * Flatten::parseClusterFile(const char* fileName, 
   return returnMe;
 }
 
-void Flatten::drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const char * fileName, int width, int height)
+void Flatten::drawdequePlane(Plane<std::deque<Double> > * planeToPrint,const char * fileName, int width, int height)
 {
 
 #ifndef __USE_BOINC__
@@ -422,14 +422,14 @@ void Flatten::drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const
   image.SetSize(width,height);
   image.SetBitDepth(24);
 
-  using utils::DStack;
+  using std::deque;
 
   for(int i = 0;i< width - 1;i++)
     for(int j =0;j<height - 1;j++)
       {
-	DStack<Double> stacky = planeToPrint->getValue(i,j);
+	deque<Double> stacky = planeToPrint->getValue(i,j);
 	
-	if(!stacky.isEmpty())
+	if(stacky.size())
 	  {
 	    image(i+1,j+1)->Red = 255;
 	    image(i+1,j+1)->Green = 0;
@@ -448,11 +448,11 @@ void Flatten::drawDStackPlane(Plane<utils::DStack<Double> > * planeToPrint,const
   #endif
 }
 
-void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double> > * plane)
+void Flatten::writedequePlane(const char * fileName, Plane<std::deque<Double> > * plane)
 {
 
   DEBUG_PRINT("writing plane");
-  using utils::DStack;
+  using std::deque;
   int width = plane->numberOfRows();
   int height = plane->numberOfColumns();
 
@@ -469,7 +469,7 @@ void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double
 
   double normalize = totalMass/numberOfParticles;
   double curr = 0;
-  DStack<Double> stacky;
+  deque<Double> stacky;
   int counter = 0;
   for(int i = 0;i < width; i++)
     for(int j = 0;j< height;j++)
@@ -478,9 +478,9 @@ void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double
 	stacky = plane->getValue(i,j);
 	curr = 0;
 
-	while(!stacky.isEmpty())
+	while(stacky.size())
 	  {
-	    stacky.pop();
+	    stacky.pop_back();
 	    curr += normalize;
 	  }
 
@@ -494,15 +494,15 @@ void Flatten::writeDStackPlane(const char * fileName, Plane<utils::DStack<Double
 
 int Flatten::createSurfaceMassDensity(const char* fileName, Double resolution, const char* outLENS)
 {
-		    using utils::DStack;
+		    using std::deque;
 		    
-		    Plane<utils::DStack<Double> > * cluster = parseClusterFile(fileName,resolution);
+		    Plane<std::deque<Double> > * cluster = parseClusterFile(fileName,resolution);
 		    
 #ifndef __USE_BOINC__
 		    if(drawImage)
-		      drawDStackPlane(cluster,clusterOutBMP.c_str(),cluster->numberOfRows(),cluster->numberOfColumns());
+		      drawdequePlane(cluster,clusterOutBMP.c_str(),cluster->numberOfRows(),cluster->numberOfColumns());
 #endif
-		    writeDStackPlane(outLENS,cluster);
+		    writedequePlane(outLENS,cluster);
 
 		    delete cluster;
 		    delete [] xBounds;

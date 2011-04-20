@@ -12,12 +12,7 @@
 
 #include "libmygl/Cosmology.h"
 
-
-#ifdef __VERBOSE__
-#define VERBOSE_PRINT(X) std::cout << X << std::endl;
-#else
-#define VERBOSE_PRINT(X) 
-#endif
+#include "defines.h"
 
 /**
  * Create a cluster based on a given distribution
