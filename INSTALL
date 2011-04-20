@@ -1,3 +1,14 @@
+Requires Automake, Autoconf, bison and yacc
+
+Requires libdnstd (http://libdnstd.davecoss.com/)
+
+Requires libmygl (http://research.davecoss.com/)
+
+Requires fftw3 (http://www.fftw.org)
+
+Run ./setup and the follow the usual configure and make processes,
+described below. 
+
 Installation Instructions
 *************************
 
