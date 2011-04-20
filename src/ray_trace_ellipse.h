@@ -1,16 +1,8 @@
 #ifndef RAY_TRACE_CPP
 #define RAY_TRACE_CPP
 
-#if __VERBOSE__ 
-#define VERBOSE_PRINT(x) std::cout << x << std::endl; 
-#else 
-#define VERBOSE_PRINT(x)
-#endif
-
-#ifdef __DEBUG__
-#define DEBUG_PRINT(x) std::cout << x << std::endl; 
-#else 
-#define DEBUG_PRINT
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
 
 #include <iostream>
@@ -32,6 +24,9 @@
 #include "libmygl/densityprofile.h"
 #include "libmygl/planecreator.h"
 
+
+#include "defines.h"
+
 #ifndef _WIN32
 #include <cstdio>
 #include <cctype>
@@ -47,7 +42,21 @@
 #define DAEMON_NAME "ray_trace_ellipse"
 #endif
 
-//template class Plane<math::Complex>;
+
+
+#ifdef USE_MPI
+#include <mpi.h>
+
+#define MPI_MASTER 0
+
+typedef struct{
+  int rank;
+  int num_ranks;
+  std::string hostname;
+}MPIData;
+MPIData mpi_data;
+
+#endif
 
 
 /** \mainpage Documentation of the Main Executables.

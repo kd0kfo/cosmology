@@ -7,9 +7,12 @@ AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 
+#templates
+AH_TEMPLATE([USE_MPI],[Define to compile with MPI.])
+
 # Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
+AC_PROG_CXX([mpic++ icc g++])
+AC_PROG_CC([mpicc icc gcc])
 AC_PROG_YACC
 AC_PROG_LEX
 
@@ -50,6 +53,22 @@ AC_ARG_WITH([fftw3],AS_HELP_STRING([--with-fftw3@<:@=dir@:>@],[Include fftw3 lib
 if test x$with_fftw3 != x; then
    AC_SUBST(FFTW3_PATH,$with_fftw3)
 fi
+
+#mpi
+AC_ARG_WITH([mpi],AS_HELP_STRING([--with-mpi],[Includes the use of MPI.]),
+[case "${withval}" in
+      yes) mpi=. ;;
+      no) mpi=false ;;
+      *) mpi=${withval} ;;
+esac]
+AC_SUBST(MPI_PATH,$mpi)
+AC_MSG_RESULT(Compiling with MPI)
+AC_DEFINE([USE_MPI],[1])
+,
+[mpi=false]
+)
+AM_CONDITIONAL([BUILD_WITH_MPI],[test x$mpi != xfalse])
+
 
 
 # Checks for library functions.

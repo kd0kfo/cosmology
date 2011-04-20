@@ -3,13 +3,45 @@
  */
 #include "ray_trace_ellipse.h"
 
+int init_mpi(int *argc, char ***argv, int *mpi_rank, int *mpi_size)
+{
+  int retval = 0;
+  retval = MPI_Init(argc,argv);
+  if(retval)
+    return retval;
+  
+  retval = MPI_Comm_rank(MPI_COMM_WORLD,mpi_rank);
+  if(retval)
+    return retval;
+  retval = MPI_Comm_size(MPI_COMM_WORLD,mpi_size);
+  return retval;
+}
 
 #ifndef __USE_BOINC__
 int main(int argc, char** argv)
 {
+  int retval = 0;
   try
     {
-      return super_main(argc,argv);
+#ifdef USE_MPI
+      retval = init_mpi(&argc,&argv,&mpi_data.rank,&mpi_data.num_ranks);
+      if(retval)
+	{
+	  char msg[MPI_MAX_ERROR_STRING];
+	  int size;
+	  MPI_Error_string(retval,msg,&size);
+	  std::cerr << "ERROR - MPI initialization failed." << std::endl
+		    << "Reason: " << msg << " Error Code " << retval;
+	}
+      else
+	{
+	  mpi_data.hostname = utils::get_hostname();
+	  std::cout << "MPI started on " << mpi_data.hostname 
+		    << " with rank " << mpi_data.rank << std::endl;
+	}
+#endif
+      if(retval == 0)
+	retval = super_main(argc,argv);
     }
   catch(DavidException de)
     {
@@ -18,8 +50,14 @@ int main(int argc, char** argv)
       std::cerr << "The following message was provided:" << std::endl;
       de.stdErr();
 
-      return de.getCode();
+      retval = de.getCode();
     }
+
+#ifdef USE_MPI
+  MPI_Finalize();
+#endif
+
+  return retval;
 }
 #endif
 //endif boinc

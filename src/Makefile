@@ -41,6 +41,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = ray_trace_ellipse$(EXEEXT) flatten$(EXEEXT) \
 	physcalc$(EXEEXT) makecluster$(EXEEXT)
+am__append_1 = -I${MPI_PATH}/include
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	physcalc.lex.cpp physcalc.yacc.cpp physcalc.yacc.h
@@ -62,8 +63,8 @@ am_makecluster_OBJECTS = makecluster-makecluster.$(OBJEXT) \
 	makecluster-create_cluster.$(OBJEXT)
 makecluster_OBJECTS = $(am_makecluster_OBJECTS)
 makecluster_DEPENDENCIES =
-am_physcalc_OBJECTS = physcalc-physcalc.lex.$(OBJEXT) \
-	physcalc-physcalc.yacc.$(OBJEXT)
+am_physcalc_OBJECTS = physcalc-physcalc.yacc.$(OBJEXT) \
+	physcalc-physcalc.lex.$(OBJEXT)
 physcalc_OBJECTS = $(am_physcalc_OBJECTS)
 physcalc_DEPENDENCIES =
 am_ray_trace_ellipse_OBJECTS =  \
@@ -91,21 +92,23 @@ DIST_SOURCES = $(flatten_SOURCES) $(makecluster_SOURCES) \
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/dcoss/tmp/blah/c/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run aclocal-1.9
 ALLOCA = 
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/dcoss/tmp/blah/c/missing --run tar
-AUTOCONF = ${SHELL} /home/dcoss/tmp/blah/c/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/dcoss/tmp/blah/c/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/dcoss/tmp/blah/c/missing --run automake-1.9
+AMTAR = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run tar
+AUTOCONF = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run automake-1.9
 AWK = gawk
-CC = gcc
+BUILD_WITH_MPI_FALSE = #
+BUILD_WITH_MPI_TRUE = 
+CC = mpicc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
-CPP = gcc -E
+CPP = mpicc -E
 CPPFLAGS = 
-CXX = g++
+CXX = mpic++
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
@@ -130,22 +133,23 @@ LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
 LIBOBJS = 
 LIBS = 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/dcoss/tmp/blah/c/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/dcoss/tmp/blah/cos/missing --run makeinfo
+MPI_PATH = /home/dcoss/opt/openmpi
 OBJEXT = o
 PACKAGE = mycosmo
 PACKAGE_BUGREPORT = david@davecoss.com
 PACKAGE_NAME = mycosmo
-PACKAGE_STRING = mycosmo 1.0
+PACKAGE_STRING = mycosmo 1.1
 PACKAGE_TARNAME = mycosmo
-PACKAGE_VERSION = 1.0
+PACKAGE_VERSION = 1.1
 PATH_SEPARATOR = :
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 1.0
+VERSION = 1.1
 YACC = bison -y
-ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CC = mpicc
+ac_ct_CXX = mpic++
 ac_ct_STRIP = 
 am__fastdepCC_FALSE = #
 am__fastdepCC_TRUE = 
@@ -163,7 +167,7 @@ exec_prefix = ${prefix}
 host_alias = 
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /home/dcoss/tmp/blah/c/install-sh
+install_sh = /home/dcoss/tmp/blah/cos/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
@@ -177,7 +181,8 @@ sharedstatedir = ${prefix}/com
 sysconfdir = ${prefix}/etc
 target_alias = 
 ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
-ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
+ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/ \
+	-I$(LIBDNSTD_PATH)/include/ $(am__append_1)
 ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
 ray_trace_ellipse_LDADD = -lmygl -ldnstd
 flatten_SOURCES = flattenmain.cpp flatten.cpp
@@ -185,7 +190,7 @@ flatten_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
 flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
 flatten_LDADD = -lmygl -ldnstd
 AM_YFLAGS = -d
-physcalc_SOURCES = physcalc.lex.lpp physcalc.yacc.ypp
+physcalc_SOURCES = physcalc.yacc.ypp physcalc.lex.lpp 
 physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ -I${FFTW3_PATH}/include
 physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib -L${FFTW3_PATH}/lib
 physcalc_LDADD = -lmygl -ldnstd -lfftw3 
@@ -351,20 +356,6 @@ makecluster-create_cluster.obj: create_cluster.cpp
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(makecluster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o makecluster-create_cluster.obj `if test -f 'create_cluster.cpp'; then $(CYGPATH_W) 'create_cluster.cpp'; else $(CYGPATH_W) '$(srcdir)/create_cluster.cpp'; fi`
 
-physcalc-physcalc.lex.o: physcalc.lex.cpp
-	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT physcalc-physcalc.lex.o -MD -MP -MF "$(DEPDIR)/physcalc-physcalc.lex.Tpo" -c -o physcalc-physcalc.lex.o `test -f 'physcalc.lex.cpp' || echo '$(srcdir)/'`physcalc.lex.cpp; \
-	then mv -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo" "$(DEPDIR)/physcalc-physcalc.lex.Po"; else rm -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo"; exit 1; fi
-#	source='physcalc.lex.cpp' object='physcalc-physcalc.lex.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o physcalc-physcalc.lex.o `test -f 'physcalc.lex.cpp' || echo '$(srcdir)/'`physcalc.lex.cpp
-
-physcalc-physcalc.lex.obj: physcalc.lex.cpp
-	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT physcalc-physcalc.lex.obj -MD -MP -MF "$(DEPDIR)/physcalc-physcalc.lex.Tpo" -c -o physcalc-physcalc.lex.obj `if test -f 'physcalc.lex.cpp'; then $(CYGPATH_W) 'physcalc.lex.cpp'; else $(CYGPATH_W) '$(srcdir)/physcalc.lex.cpp'; fi`; \
-	then mv -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo" "$(DEPDIR)/physcalc-physcalc.lex.Po"; else rm -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo"; exit 1; fi
-#	source='physcalc.lex.cpp' object='physcalc-physcalc.lex.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o physcalc-physcalc.lex.obj `if test -f 'physcalc.lex.cpp'; then $(CYGPATH_W) 'physcalc.lex.cpp'; else $(CYGPATH_W) '$(srcdir)/physcalc.lex.cpp'; fi`
-
 physcalc-physcalc.yacc.o: physcalc.yacc.cpp
 	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT physcalc-physcalc.yacc.o -MD -MP -MF "$(DEPDIR)/physcalc-physcalc.yacc.Tpo" -c -o physcalc-physcalc.yacc.o `test -f 'physcalc.yacc.cpp' || echo '$(srcdir)/'`physcalc.yacc.cpp; \
 	then mv -f "$(DEPDIR)/physcalc-physcalc.yacc.Tpo" "$(DEPDIR)/physcalc-physcalc.yacc.Po"; else rm -f "$(DEPDIR)/physcalc-physcalc.yacc.Tpo"; exit 1; fi
@@ -378,6 +369,20 @@ physcalc-physcalc.yacc.obj: physcalc.yacc.cpp
 #	source='physcalc.yacc.cpp' object='physcalc-physcalc.yacc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o physcalc-physcalc.yacc.obj `if test -f 'physcalc.yacc.cpp'; then $(CYGPATH_W) 'physcalc.yacc.cpp'; else $(CYGPATH_W) '$(srcdir)/physcalc.yacc.cpp'; fi`
+
+physcalc-physcalc.lex.o: physcalc.lex.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT physcalc-physcalc.lex.o -MD -MP -MF "$(DEPDIR)/physcalc-physcalc.lex.Tpo" -c -o physcalc-physcalc.lex.o `test -f 'physcalc.lex.cpp' || echo '$(srcdir)/'`physcalc.lex.cpp; \
+	then mv -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo" "$(DEPDIR)/physcalc-physcalc.lex.Po"; else rm -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo"; exit 1; fi
+#	source='physcalc.lex.cpp' object='physcalc-physcalc.lex.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o physcalc-physcalc.lex.o `test -f 'physcalc.lex.cpp' || echo '$(srcdir)/'`physcalc.lex.cpp
+
+physcalc-physcalc.lex.obj: physcalc.lex.cpp
+	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT physcalc-physcalc.lex.obj -MD -MP -MF "$(DEPDIR)/physcalc-physcalc.lex.Tpo" -c -o physcalc-physcalc.lex.obj `if test -f 'physcalc.lex.cpp'; then $(CYGPATH_W) 'physcalc.lex.cpp'; else $(CYGPATH_W) '$(srcdir)/physcalc.lex.cpp'; fi`; \
+	then mv -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo" "$(DEPDIR)/physcalc-physcalc.lex.Po"; else rm -f "$(DEPDIR)/physcalc-physcalc.lex.Tpo"; exit 1; fi
+#	source='physcalc.lex.cpp' object='physcalc-physcalc.lex.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(physcalc_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o physcalc-physcalc.lex.obj `if test -f 'physcalc.lex.cpp'; then $(CYGPATH_W) 'physcalc.lex.cpp'; else $(CYGPATH_W) '$(srcdir)/physcalc.lex.cpp'; fi`
 
 ray_trace_ellipse-ray_trace_ellipse.o: ray_trace_ellipse.cpp
 	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ray_trace_ellipse_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ray_trace_ellipse-ray_trace_ellipse.o -MD -MP -MF "$(DEPDIR)/ray_trace_ellipse-ray_trace_ellipse.Tpo" -c -o ray_trace_ellipse-ray_trace_ellipse.o `test -f 'ray_trace_ellipse.cpp' || echo '$(srcdir)/'`ray_trace_ellipse.cpp; \
