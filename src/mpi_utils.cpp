@@ -47,10 +47,10 @@ void utils::mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators)
 	  std::ostringstream error;
 	  error << "utils::mpi_recombine: Process " << mpi_data.rank 
 		<< " has an array of differing dimensions as the Master." 
-		<< std::endl<<
+		<< std::endl
 		<< "Master Plane is " << rows << " by " << columns <<std::endl
 		<< "Process " <<  mpi_data.rank << " is " << 
-	    lens->numberOfRows() << " by " << != lens->numberOfColumns() ;
+	    lens->numberOfRows() << " by " <<  lens->numberOfColumns() ;
 	  throw DavidException(error,DavidException::DATA_FORMAT_ERROR);
 	}
     }
@@ -60,8 +60,8 @@ for(size_t i = 0;i<rows;i++)
   {
     for(size_t j = 0;j<columns;j++)
       {
-	for(size_k = 0;k<2;k++)
-	  shared_array[2*j+i*rows+k] = lens->getValue(i,j).getValue(k);
+    	shared_array[2*j+i*rows] = lens->getValue(i,j).real();
+    	shared_array[2*j+i*rows+1] = lens->getValue(i,j).imag();
       }
   }
  retval = MPI_Allreduce(MPI_IN_PLACE,shared_array,2*rows*columns,MPI_DOUBLE,MPI_SUM,plane_creators);
@@ -70,7 +70,7 @@ for(size_t i = 0;i<rows;i++)
    {
      std::ostringstream error;
      char mpierror[MPI_MAX_ERROR_STRING];
-     size dummy;
+     int size;
      error << "utils::mpi_recombine: Process " << mpi_data.rank
 	   << "Could not MPI_Allreduce data. " << std::endl
 	   << "Reason: " << MPI_Error_string(retval,mpierror,&size);
@@ -81,8 +81,8 @@ for(size_t i = 0;i<rows;i++)
   {
     for(size_t j = 0;j<columns;j++)
       {
-	math::Complex cnum(shared_array[2*j+i*rows],shared_array[2*j+i*rows+1]);
-	lens->setValue(i,j, cnum);
+    	math::Complex cnum(shared_array[2*j+i*rows],shared_array[2*j+i*rows+1]);
+    	lens->setValue(i,j, cnum);
       }
   }
 
@@ -90,6 +90,27 @@ for(size_t i = 0;i<rows;i++)
 
  MPI_Barrier(plane_creators);
 
+}
+
+void utils::mpi_adjust_glellipsebounds(int *glellipseBounds)
+{
+	int *bound_vals = NULL;
+	int old_bounds[4];
+	size_t X,Y,N,increment;
+	if(glellipseBounds == NULL)
+		return;
+
+	memcpy(old_bounds,*glellipseBounds,4);
+	X = old_bounds[1]- old_bounds[0];
+	Y = old_bounds[3] - old_bounds[2];
+	N = X*Y;
+	increment = (size_t)ceil(1.0*N/mpi_data.size);
+
+	glellipseBounds[0] = (old_bounds[0] + (mpi_data.rank * increment)) % X;
+	glellipseBounds[1] = (gellipseBounds[0] + increment) % X;
+	glellipseBounds[2] = (int)(old_bounds[2] + (mpi_data.rank * increment)) / X;
+	glellipseBounds[2] = glellipseBounds[2] % Y;
+	glellipseBounds[3] = (glellipseBounds[2] + ((int)increment/X)) % Y;
 }
 
 

@@ -160,8 +160,8 @@ std::string fileNamePrefix;///< prefix of files created in the simulation
 utils::DRandom * randy;///< Random number Generator.
 bool includeCricalCurveAndCaustic;///< Whether Critical Curves and Caustics should be used.
 Plane<math::Complex> * deflectionPlane;
-char * lensMassDeflectionPlane;
-char * sourceBMPFilename;
+std::string lensMassDeflectionPlane;
+std::string sourceBMPFilename;
 bool runExistingDeflection;
 bool createDeflection;
 bool runSim;

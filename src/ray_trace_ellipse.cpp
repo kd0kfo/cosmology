@@ -67,7 +67,7 @@ int super_main(int argc, char** argv)
 	
   lensMassDensity = 0;
 
-  lensMassDeflectionPlane= strdup("lens");
+  lensMassDeflectionPlane = "lens";
 
   offset = 0;
 	
@@ -83,14 +83,12 @@ int super_main(int argc, char** argv)
   int retval = parseArgs(argc,argv);
   if( retval != -42)
     {
-      free(lensMassDeflectionPlane);
       return retval;
     }
 
   if(!runAsDaemon)
     {
       retval = sub_main(argc, argv);
-      free(lensMassDeflectionPlane);
       return retval;
     }
 
@@ -115,7 +113,6 @@ int super_main(int argc, char** argv)
   closelog();
 #endif
       
-  free(lensMassDeflectionPlane);
   return returnValue;
 }
 
@@ -179,12 +176,16 @@ int simulationSetup()
       numberOfLensVariations = 1;
     }
 
+#ifdef USE_MPI
+  	  utils::mpi_adjust_glellipsebounds(::glellipseBounds);
+#endif
+
   Double zeroDouble(0.0);
   Plane<Double> * lens = new Plane<Double>(width,height, bgColor);
 
   Plane<Double> * sources = 0;
 #ifndef __USE_BOINC__
-  if(access(sourceBMPFilename,R_OK) == 0)
+  if(access(sourceBMPFilename.c_str(),R_OK) == 0)
     sources = Plane<Double>::bmpToPlane(sourceBMPFilename);
 #endif
   Plane<Double> * lensMassPlane = new Plane<Double>(width,height, zeroDouble);
@@ -327,16 +328,25 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	  verbosePrint(std::string("Creating Deflection Plane: ") + lensMassDeflectionPlane);
 	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,offset);
 
+#ifdef USE_MPI
+		  MPI_Comm lens_group;
+		  int has_lens = (gls[i].getDeflectionPlane() != 0) ? 1 : 0;
+		  MPI_Comm_split(MPI_COMM_WORLD,has_lens,mpi_data.rank,&lens_group);
+#endif
+
 	  if(gls[i].getDeflectionPlane() != 0)
 	    {
 #ifdef USE_MPI
-	      utils::mpi_recombine(gls[i]);
-	      MPI_Barrier(MPI_COMM_WORLD);
+	      utils::mpi_recombine(gls[i],lens_group);
 	      if(mpi_data.rank == utils::MASTER)
-		gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);#else
+	    	  gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+#else
 	      gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
 #endif
 	    }
+#ifdef USE_MPI
+	  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 	}
       if(!createDeflection && !runExistingDeflection)
 	{
