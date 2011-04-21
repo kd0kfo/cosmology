@@ -26,22 +26,22 @@ void utils::mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators)
   Plane<math::Complex> *lens = NULL;
 
   lens = gls.getDeflectionPlane();
-  if(mpi_data.rank == utils::MASTER)
+  if(mpi_data.rank == utils::MASTER_RANK)
     {
       if(lens == NULL)
 	throw DavidException("utils::mpi_recombine: Master has a NULL lens plane. Cannot recombine.",DavidException::DATA_FORMAT_ERROR);
       rows = lens->numberOfRows();
       columns = lens->numberOfColumns();
       MPI_Bcast(&rows,1,MPI_DOUBLE,mpi_data.rank,plane_creators);
-      MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER,plane_creators);
+      MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
     }
   else
     {
       if(lens == NULL)
 	return;
 
-      MPI_Bcast(&rows,1,MPI_DOUBLE,utils::MASTER,plane_creators);
-      MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER,plane_creators);
+      MPI_Bcast(&rows,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
+      MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
       if(rows != lens->numberOfRows() || columns != lens->numberOfColumns())
 	{
 	  std::ostringstream error;
@@ -92,25 +92,63 @@ for(size_t i = 0;i<rows;i++)
 
 }
 
-void utils::mpi_adjust_glellipsebounds(int *glellipseBounds)
+void utils::mpi_adjust_glellipsebounds(int *glellipseBounds, size_t N)
 {
 	int *bound_vals = NULL;
 	int old_bounds[4];
-	size_t X,Y,N,increment;
-	if(glellipseBounds == NULL)
+	size_t X,Y,increment;
+	if(glellipseBounds == NULL && N == 0)
 		return;
 
-	memcpy(old_bounds,*glellipseBounds,4);
+	if(glellipseBounds == NULL)
+	  {
+	    old_bounds[1] = old_bounds[3] = N;
+	    old_bounds[0] = old_bounds[2] = 0;
+	  }
+	else
+	  {
+	    if(glellipseBounds[0] == -1)
+	      glellipseBounds[0] = 0;
+	    if(glellipseBounds[1] == -1)
+	      glellipseBounds[1] = N;
+	    if(glellipseBounds[2] == -1)
+	      glellipseBounds[2] = 0;
+	    if(glellipseBounds[3] == -1)
+	      glellipseBounds[3] = N;
+	    memcpy(old_bounds,glellipseBounds,4*sizeof(int));
+	    
+	  }
 	X = old_bounds[1]- old_bounds[0];
 	Y = old_bounds[3] - old_bounds[2];
 	N = X*Y;
-	increment = (size_t)ceil(1.0*N/mpi_data.size);
 
-	glellipseBounds[0] = (old_bounds[0] + (mpi_data.rank * increment)) % X;
-	glellipseBounds[1] = (gellipseBounds[0] + increment) % X;
-	glellipseBounds[2] = (int)(old_bounds[2] + (mpi_data.rank * increment)) / X;
-	glellipseBounds[2] = glellipseBounds[2] % Y;
-	glellipseBounds[3] = (glellipseBounds[2] + ((int)increment/X)) % Y;
+	if(mpi_data.num_ranks < Y)
+	  {
+	    glellipseBounds[2] = old_bounds[2] + mpi_data.rank * (int)ceil(Y/mpi_data.num_ranks);
+	    glellipseBounds[3] = old_bounds[2] + (mpi_data.rank+1) * (int)ceil(Y/mpi_data.num_ranks);
+	  }
+	else
+	  {
+	    float subdivision = (float)X/Y;
+	    glellipseBounds[3] = old_bounds[2] + mpi_data.rank * (int)ceil(Y/mpi_data.num_ranks);
+	    if(glellipseBounds[3] > old_bounds[3])
+	      glellipseBounds[3] = old_bounds[3];
+	    
+	    if(mpi_data.rank % 2 == 0)
+	      glellipseBounds[1] = old_bounds[0] + (int)ceil(subdivision);
+	    else
+	      {
+		glellipseBounds[0] = old_bounds[0] + (int)ceil(subdivision);
+	      }
+
+	    if(mpi_data.num_ranks % 2 != 0)
+	      {
+		// if there are an odd number of slaves, have the last slave
+		// do a whole row.
+		if(mpi_data.rank = mpi_data.num_ranks - 1)
+		    memcpy(&glellipseBounds[2],&old_bounds[2],2*sizeof(int));
+	      }
+	  }
 }
 
 

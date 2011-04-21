@@ -177,7 +177,9 @@ int simulationSetup()
     }
 
 #ifdef USE_MPI
-  	  utils::mpi_adjust_glellipsebounds(::glellipseBounds);
+  utils::mpi_adjust_glellipsebounds(::glellipseBounds,N);
+  DEBUG_PRINT("Process " << mpi_data.rank << ": Making plane dim: " << glellipseBounds[0] << ", " << glellipseBounds[1] << ", " << glellipseBounds[2] << ", " << glellipseBounds[3]);
+
 #endif
 
   Double zeroDouble(0.0);
@@ -207,10 +209,13 @@ int simulationSetup()
 #ifndef __USE_BOINC__
       lens->draw(fullLensFilename,false,gridSpace > 0,gridSpace);
 		
-      std::string fullSourceFilename = fileNamePrefix + "sources.bmp";
-      DEBUG_PRINT("Drawing sources");
-      DEBUG_PRINT(sources);
-      sources->draw(fullSourceFilename,false,gridSpace > 0,gridSpace);
+      if(sources != NULL)
+	{
+	  std::string fullSourceFilename = fileNamePrefix + "sources.bmp";
+	  DEBUG_PRINT("Drawing sources");
+	  DEBUG_PRINT(sources);
+	  sources->draw(fullSourceFilename,false,gridSpace > 0,gridSpace);
+	}
 #endif
       DEBUG_PRINT("DELETING");
       delete lens;
@@ -338,8 +343,9 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	    {
 #ifdef USE_MPI
 	      utils::mpi_recombine(gls[i],lens_group);
-	      if(mpi_data.rank == utils::MASTER)
+	      if(mpi_data.rank == utils::MASTER_RANK)
 	    	  gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+
 #else
 	      gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
 #endif
