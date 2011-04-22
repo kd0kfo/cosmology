@@ -366,19 +366,36 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
   verbosePrint("Running Sim");
   if(runSim)//Run ray trace, else no sim
     {
+      size_t X,Y,X0,Y0;
       Plane<math::Complex> * sourceLocations = 0;
       if(savesourcelocations != 0)
 	sourceLocations = new Plane<math::Complex>(N,N,math::Complex(0.0,0.0));
 
-
+      X = lens->numberOfRows();
+      Y = lens->numberOfColumns();
+      X0 = 0;
+      Y0 = 0;
+      if(glellipseBounds[0] > 0)
+	X0 = glellipseBounds[0];
+      if(glellipseBounds[1] < N)
+	X = glellipseBounds[1];
+      if(glellipseBounds[2] > 0)
+	Y0 = glellipseBounds[2];
+      if(glellipseBounds[3] > 0)
+	Y = glellipseBounds[3];
       
+#ifdef USE_MPI
+  DEBUG_PRINT("Process " << mpi_data.rank << ": Making plane dim: " << glellipseBounds[0] << ", " << glellipseBounds[1] << ", " << glellipseBounds[2] << ", " << glellipseBounds[3]);
+
+#endif
+
       int percentFinished = 0;
       Double sourceValue;
-      for(int i = 0;i<N;i++)
+      for(size_t i = X0;i<X;i++)
 	{
-	  for(int j = 0;j<N;j++)
+	  for(size_t j = Y0;j<Y;j++)
 	    {
-	      for(int k = 0;k<numberOfSources;k++)
+	      for(size_t k = 0;k<numberOfSources;k++)
 		{
 		  try
 		    {
@@ -413,8 +430,11 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	  verbosePrint(std::string("Writing source plane to ") + *savesourcelocations);
 #ifdef USE_MPI
 	  utils::mpi_recombine(sourceLocations,MPI_COMM_WORLD);
-#endif
+	  if(mpi_data.rank == utils::MASTER_RANK)
+	    sourceLocations->savePlane(*savesourcelocations);
+#else
 	  sourceLocations->savePlane(*savesourcelocations);
+#endif
 	}
     }//end if(runsim)
   else
@@ -995,8 +1015,8 @@ int parseArgs(int argc, char** argv)
 	{
 #ifndef __USE_BOINC__
 	  verbosePrint("Options are:");
-	  verbosePrint("--newLens <lens>");
-	  verbosePrint("Creates a new lens saved as <lens>");
+	  verbosePrint("--newlens <lens>");
+	  verbosePrint("Creates a new lens saved as <lens>. Causes simulation to no happen. Override this with --forcerun");
 	  verbosePrint("--createsurfacemassdensity <parameterfile> <outfile>");
 	  verbosePrint("Creates 2-D massdensity (double values) based on the given parameters.");
 	  verbosePrint("--usesurfacemassdensity <infile>");
@@ -1036,6 +1056,8 @@ int parseArgs(int argc, char** argv)
 	  verbosePrint("Subtracts leftplane and rightplane and saves the difference as outplane");
 	  verbosePrint("--squareplane filename");
 	  verbosePrint("Takes the plane, filename, and makes it a square by buffing the shorter dimension with zeros");
+	  verbosePrint("--savesourcelocations filename");
+	  verbosePrint("Runs raytracing and saves the location of source points in the lens plane.");
 #endif			
 
 			
@@ -1254,7 +1276,6 @@ std::string getTime()
 void verbosePrint(const char * string)
 {
 
-#if __VERBOSE__
   std::string printString(string);
 
   if(runAsDaemon || useTimeStamp)
@@ -1264,7 +1285,6 @@ void verbosePrint(const char * string)
     }
 
   std::cout << printString << std::endl;
-#endif
 
 }
 
