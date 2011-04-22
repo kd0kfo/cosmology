@@ -16,33 +16,29 @@ int utils::init_mpi(int *argc, char ***argv, int *mpi_rank, int *mpi_size)
   return retval;
 }
 
-
-void utils::mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators)
+void utils::mpi_recombine(Plane<math::Complex> *plane, MPI_Comm plane_creators)
 {
-
   double *shared_array = NULL;
   size_t rows,columns;
   int retval = 0;
-  Plane<math::Complex> *lens = NULL;
 
-  lens = gls.getDeflectionPlane();
   if(mpi_data.rank == utils::MASTER_RANK)
     {
-      if(lens == NULL)
-	throw DavidException("utils::mpi_recombine: Master has a NULL lens plane. Cannot recombine.",DavidException::DATA_FORMAT_ERROR);
-      rows = lens->numberOfRows();
-      columns = lens->numberOfColumns();
+      if(plane == NULL)
+	throw DavidException("utils::mpi_recombine: Master has a NULL plane. Cannot recombine.",DavidException::DATA_FORMAT_ERROR);
+      rows = plane->numberOfRows();
+      columns = plane->numberOfColumns();
       MPI_Bcast(&rows,1,MPI_DOUBLE,mpi_data.rank,plane_creators);
       MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
     }
   else
     {
-      if(lens == NULL)
+      if(plane == NULL)
 	return;
 
       MPI_Bcast(&rows,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
       MPI_Bcast(&columns,1,MPI_DOUBLE,utils::MASTER_RANK,plane_creators);
-      if(rows != lens->numberOfRows() || columns != lens->numberOfColumns())
+      if(rows != plane->numberOfRows() || columns != plane->numberOfColumns())
 	{
 	  std::ostringstream error;
 	  error << "utils::mpi_recombine: Process " << mpi_data.rank 
@@ -50,7 +46,7 @@ void utils::mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators)
 		<< std::endl
 		<< "Master Plane is " << rows << " by " << columns <<std::endl
 		<< "Process " <<  mpi_data.rank << " is " << 
-	    lens->numberOfRows() << " by " <<  lens->numberOfColumns() ;
+	    plane->numberOfRows() << " by " <<  plane->numberOfColumns() ;
 	  throw DavidException(error,DavidException::DATA_FORMAT_ERROR);
 	}
     }
@@ -60,8 +56,8 @@ for(size_t i = 0;i<rows;i++)
   {
     for(size_t j = 0;j<columns;j++)
       {
-    	shared_array[2*j+i*rows] = lens->getValue(i,j).real();
-    	shared_array[2*j+i*rows+1] = lens->getValue(i,j).imag();
+    	shared_array[2*j+i*rows] = plane->getValue(i,j).real();
+    	shared_array[2*j+i*rows+1] = plane->getValue(i,j).imag();
       }
   }
  retval = MPI_Allreduce(MPI_IN_PLACE,shared_array,2*rows*columns,MPI_DOUBLE,MPI_SUM,plane_creators);
@@ -82,13 +78,22 @@ for(size_t i = 0;i<rows;i++)
     for(size_t j = 0;j<columns;j++)
       {
     	math::Complex cnum(shared_array[2*j+i*rows],shared_array[2*j+i*rows+1]);
-    	lens->setValue(i,j, cnum);
+    	plane->setValue(i,j, cnum);
       }
   }
 
  free(shared_array);
 
  MPI_Barrier(plane_creators);
+
+}
+
+void utils::mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators)
+{
+
+  Plane<math::Complex> *lens  = gls.getDeflectionPlane();
+
+  mpi_recombine(lens,plane_creators);
 
 }
 

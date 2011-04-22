@@ -411,6 +411,9 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
       if(savesourcelocations != 0 && sourceLocations != 0)
 	{
 	  verbosePrint(std::string("Writing source plane to ") + *savesourcelocations);
+#ifdef USE_MPI
+	  utils::mpi_recombine(sourceLocations,MPI_COMM_WORLD);
+#endif
 	  sourceLocations->savePlane(*savesourcelocations);
 	}
     }//end if(runsim)

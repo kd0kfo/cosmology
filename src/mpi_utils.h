@@ -19,6 +19,7 @@ namespace utils{
 
 int init_mpi(int *argc, char ***argv, int *mpi_rank, int *mpi_size);
  void mpi_recombine(GLAlgorithm& gls, MPI_Comm plane_creators);
+ void mpi_recombine(Plane<math::Complex> *plane, MPI_Comm plane_creators);
  void mpi_adjust_glellipsebounds(int *glellipseBounds, size_t N);
 };//end namespace utils
 
