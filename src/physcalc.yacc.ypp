@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <complex>
+#include <dirent.h>
 #include "symrec.h"
 #include "functions.h"
 
@@ -11,7 +12,9 @@
   int yylex (void);
   extern char* yytext;
   void yyerror (char const *);
-  void do_command(const char*);
+  void do_ls(const char *path);	
+  void print_help(const char *keyword);
+  void do_funct(symrec* fnct,  struct calcval result);
   void do_funct(symrec* fnct, symrec* param, struct calcval result);
   void do_funct(symrec* fnct, struct calcval param, struct calcval result);
   void do_funct2(symrec* fnct, symrec* param, symrec* param2, struct calcval result);
@@ -53,6 +56,7 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | VAR                { $$.re = $1->value.var[0];$$.im = $1->value.var[1];}
              | ANS                { $$ = ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var[0] = $3.re;$1->value.var[1]= $3.im; }
+	| FNCT '(' ')' {do_funct($1,ans); $$ = ans;}
              | FNCT '(' VAR ')'   { do_funct($1,$3,ans); $$ = ans;}
              | FNCT '(' exp ')'   { do_funct($1,$3,ans); $$ = ans;}
              | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,ans); $$ = ans;}
@@ -171,23 +175,31 @@ symrec *
      {
        char const *fname;
        double (*fnct) (double);
+       void (*v_c_fnct)(const char*);
      };
      
      struct init const arith_fncts[] =
      {
-       "sin",  sin,
-       "cos",  cos,
-       "tan",  tan,
-       "asin", asin,
-       "acos", acos,
-       "atan", atan,
-       "ln",   log,
-       "exp",  exp,
-       "sqrt", sqrt,
-       "floor", floor,
-       "ceil", ceil,
-       0, 0
+       "sin",  sin,0,
+       "cos",  cos,0,
+       "tan",  tan,0,
+       "asin", asin,0,
+       "acos", acos,0,
+       "atan", atan,0,
+       "ln",   log,0,
+       "exp",  exp,0,
+       "sqrt", sqrt,0,
+       "floor", floor,0,
+       "ceil", ceil,0,
+       0, 0, 0
      };
+
+	struct init const other_fncts[] = 
+	{
+		"help",0,print_help,
+		"ls",0,do_ls,
+		0,0,0
+	};
      
      /* The symbol table: a chain of `struct symrec'.  */
      symrec *sym_table;
@@ -200,12 +212,26 @@ symrec *
      {
        int i;
        symrec *ptr;
-       for (i = 0; arith_fncts[i].fname != 0; i++)
+       const struct init *curr = arith_fncts;
+
+	i = 0;
+       while (curr[i].fname != 0)
          {
-           ptr = putsym (arith_fncts[i].fname, FNCT);
-           ptr->value.fnctptr = arith_fncts[i].fnct;
+           ptr = putsym (curr[i].fname, FNCT);
+	   if(curr[i].fnct != 0)
+	           ptr->value.fnctptr =	 curr[i].fnct;
+	   else if(curr[i].v_c_fnct != 0)
+	          ptr->value.v_c_fnctptr =	 curr[i].v_c_fnct;
            ptr->plane_fnctptr = NULL;
+	
+
+           i++;
+	   if(curr == arith_fncts && curr[i].fname == 0)
+	   {
+		curr = other_fncts;i = 0;
+	   }
          }
+
        putsym("print",FNCT)->plane_fnctptr = print_plane;
        putsym("clear",FNCT)->plane_fnctptr = clear_plane;
        putsym("add",FNCT)->plane_fnctptr = add_planes;
@@ -254,6 +280,10 @@ void do_funct(symrec *rec, symrec *param, struct calcval result)
 	}
        return;
     }
+
+  if(rec->value.v_c_fnctptr != 0)
+	return (*rec->value.v_c_fnctptr)(param->name);
+
   result.re = (*(rec->value.fnctptr))(param->value.var[0]);
   result.im = 0.0;
 }
@@ -309,3 +339,60 @@ void print_complex(struct calcval cnumber)
   cout <<   endl << ">";
 }
 
+void do_funct(symrec* fnct,  struct calcval result)
+{
+	if(fnct == NULL)
+		return;
+	if(fnct->type != FNCT)
+		return;
+	if(fnct->value.v_c_fnctptr == 0)
+		return;
+	(*fnct->value.v_c_fnctptr)(NULL);
+}
+
+void print_help(const char *keyword)
+{
+	if(keyword == NULL || strcmp(keyword,"print") == 0)
+		printf("print -- summarizes data contined in the specified variable.\n");
+	if(keyword == NULL || strcmp(keyword,"clear") == 0)
+		printf("clear -- clears plane variable contents. \n");
+	if(keyword == NULL || strcmp(keyword,"add") == 0)
+		printf("add -- adds two planes. \n\tUsage: add(A,B)\n\t\t A <- A+B\n");
+	if(keyword == NULL || strcmp(keyword,"substract") == 0)
+		printf("substracts -- subtracts two planes. \n\tUsage: subtract(A,B)\n\t\t A <- A-B\n");
+	if(keyword == NULL || strcmp(keyword,"multiply") == 0)
+		printf("add -- multiply two planes. \n\tUsage: multiply(A,B)\n\t\t A <- A*B\n");
+	if(keyword == NULL || strcmp(keyword,"open") == 0)
+		printf("open -- opens a plane and stores it in the specified variable.\n\tUsage: open(A,filename);\n");
+	if(keyword == NULL || strcmp(keyword,"save") == 0)
+		printf("save -- saves a plane save the specified file.\n\tUsage: save(A,filename);\n");
+	if(keyword == NULL || strcmp(keyword,"copy") == 0)
+		printf("copy -- copies a plane.\n\tUsage: copy(A,B)\n\t\t B <- A\n");
+	if(keyword == NULL || strcmp(keyword,"fourier") == 0)
+		printf("fourier -- fourier transforms a plane. Performed in place.\nUsage: fourier(A)\n\t\tA <- F(A)\n");
+	if(keyword == NULL || strcmp(keyword,"ifourier") == 0)
+		printf("ifourier -- inverse fourier transforms a plane. Performed in place.\nUsage: ifourier(A)\n\t\tA <- F^-1 (A)\n");
+	
+}
+
+void do_ls(const char *path)
+{
+	DIR *dp;
+	struct dirent *ep;
+	
+	if(path == NULL)
+		dp = opendir ("./");
+	else
+		dp = opendir(path);
+	if (dp != NULL)
+	{
+		while (ep = readdir (dp))
+			if(ep->d_name && ep->d_name[0] != '.')
+				puts (ep->d_name);
+		closedir (dp);
+	}
+	else
+		printf ("Couldn't open the directory\n");
+
+	
+}
