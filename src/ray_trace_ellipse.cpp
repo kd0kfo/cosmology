@@ -42,6 +42,7 @@ int main(int argc, char** argv)
 {
   int retval = 0;
   glellipseBounds = NULL;
+  parameterArray = NULL;
   try
     {
 #ifdef USE_MPI
@@ -1029,7 +1030,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  args->gridSpace = (int) Double(optarg).doubleValue();
 	  break;
 	case 'p':
-	  paramParser(optarg);
+	  parameterArray = paramParser(optarg);
 	  break;
 	case CREATE_MASS:
 	  args->makeMassDensity = optarg;
@@ -1067,6 +1068,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  return 0;
 	}//end of switch(c)
     }
+
   return -42;
 }
 
