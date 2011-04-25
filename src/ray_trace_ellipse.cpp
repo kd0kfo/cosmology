@@ -3,11 +3,45 @@
  */
 #include "ray_trace_ellipse.h"
 
+enum option_keys{ CREATE_MASS = 1,SOURCE_BMP,DEFLECTION_MAP,FORCE_RUN,
+		  STOP_RUN, FILE_PREFIX, USE_GRID, RBG_COLOR, XOFFSET, YOFFSET,
+		  SUBTRACT_PLANES, ADD_PLANES, SQUARE_PLANE,
+		  SAVESOURCE_LOC,DRAW_REMOVED_AREA};
+
+static const struct option ray_trace_options[] = 
+  {
+    {"newlens", required_argument, NULL,'n'},
+    {"createsurfacemassdensity",required_argument,NULL,CREATE_MASS},
+    {"usesurfacemassdensity",required_argument,NULL,'m'},
+    {"sourcebmp",required_argument,NULL,SOURCE_BMP},
+    {"deflectionmap",required_argument,NULL,DEFLECTION_MAP},
+    {"lens",required_argument,NULL,'l'},
+    {"forcerun",no_argument,NULL,FORCE_RUN},
+    {"stoprun",no_argument,NULL,STOP_RUN},
+    {"prefix",required_argument,NULL,FILE_PREFIX},
+    {"usegrid",required_argument,NULL,USE_GRID},
+    {"bgcolor",required_argument,NULL,RBG_COLOR},
+    {"xoffset",required_argument,NULL,XOFFSET},
+    {"yoffset",required_argument,NULL,YOFFSET},
+    {"parameters",required_argument,NULL,'p'},
+    {"glellipsebounds",required_argument,NULL,'g'},
+    {"timestamp",no_argument,NULL,'t'},
+    {"addplanes",required_argument,NULL,ADD_PLANES},
+    {"subtractplanes",required_argument,NULL,SUBTRACT_PLANES},
+    {"squareplane",required_argument,NULL,SQUARE_PLANE},
+    {"savesourcelocations",no_argument,NULL,SAVESOURCE_LOC},
+    {"daemon",no_argument,NULL,'d'},
+    {"drawremovedarea",no_argument,NULL,DRAW_REMOVED_AREA},
+    {"help",no_argument,NULL,'h'},
+    {"verbose",no_argument,NULL,'v'},
+    {0,0,0,0}
+  };
 
 #ifndef __USE_BOINC__
 int main(int argc, char** argv)
 {
   int retval = 0;
+  glellipseBounds = NULL;
   try
     {
 #ifdef USE_MPI
@@ -55,40 +89,35 @@ int main(int argc, char** argv)
 
 int super_main(int argc, char** argv)
 {
-  runAsDaemon = false;
+  struct ray_trace_arguments args;
 
-  mainPrefix = "run-";
+  default_arguments(&args);
 
-  sourceBMPFilename = "source.bmp";
-
-  bgColor = 0.0;
-
-  savesourcelocations = 0;
-	
-  lensMassDensity = 0;
-
-  lensMassDeflectionPlane = "lens";
-
-  offset = 0;
-	
-  gridSpace = -1000;
-
-  drawRemovedArea = false;
 
   glellipseBounds = new int[4];
   for(int i = 0;i<4;i++)
     glellipseBounds[i] = -1;
 
-  useTimeStamp = false;
-  int retval = parseArgs(argc,argv);
+  int retval = parseArgs(argc,argv,&args);
+  
+  if(args.makeMassDensity.size() != 0)
+    {
+      createSurfaceMassDensity(args.makeMassDensity);
+      if(args.offset != NULL)
+	delete [] args.offset;
+      return 0;
+    }
+
   if( retval != -42)
     {
       return retval;
     }
 
-  if(!runAsDaemon)
+  if(!args.runAsDaemon)
     {
-      retval = sub_main(argc, argv);
+      retval = sub_main(&args);
+      if(args.offset != NULL)
+	delete [] args.offset;
       return retval;
     }
 
@@ -106,26 +135,29 @@ int super_main(int argc, char** argv)
 	
   // Now we are a daemon -- do the work for which we were paid 
 	
-  returnValue = sub_main(argc, argv);
+  returnValue = sub_main(&args);
 	
   // Finish up 
   syslog( LOG_NOTICE, "terminated" );
   closelog();
 #endif
-      
+
+  if(args.offset != NULL)
+    delete [] args.offset;
+  
   return returnValue;
 }
 
-int sub_main(int argc, char** argv)
+int sub_main(struct ray_trace_arguments *args)
 {
   int returnMe = 0;
 
   try{
     std::string startMessage = "ray_trace_ellipse started";
-    if(runAsDaemon)
+    if(args->runAsDaemon)
       startMessage += " as daemon process.";
-    verbosePrint(startMessage);
-    returnMe = simulationSetup();
+    verbosePrint(args,startMessage);
+    returnMe = simulationSetup(args);
   }
   catch(DavidException de)
     {
@@ -143,13 +175,12 @@ int sub_main(int argc, char** argv)
 
     }
 
-  delete savesourcelocations;
   delete [] parameterArray;
 
   return returnMe;
 }
 
-int simulationSetup()
+int simulationSetup(struct ray_trace_arguments *args)
 {
   using utils::DRandom;
   DRandom * randy = 0;
@@ -177,7 +208,7 @@ int simulationSetup()
     }
 
 #ifdef USE_MPI
-  utils::mpi_adjust_glellipsebounds(::glellipseBounds,N);
+  utils::mpi_adjust_glellipsebounds(glellipseBounds,N);
   DEBUG_PRINT("Process " << mpi_data.rank << ": Making plane dim: " << glellipseBounds[0] << ", " << glellipseBounds[1] << ", " << glellipseBounds[2] << ", " << glellipseBounds[3]);
 
 #endif
@@ -187,8 +218,8 @@ int simulationSetup()
 
   Plane<Double> * sources = 0;
 #ifndef __USE_BOINC__
-  if(access(sourceBMPFilename.c_str(),R_OK) == 0)
-    sources = Plane<Double>::bmpToPlane(sourceBMPFilename);
+  if(access(args->sourceBMPFilename.c_str(),R_OK) == 0)
+    sources = Plane<Double>::bmpToPlane(args->sourceBMPFilename);
 #endif
   Plane<Double> * lensMassPlane = new Plane<Double>(width,height, zeroDouble);
   Plane<math::Complex> * deflectionPlane = 0;
@@ -199,22 +230,22 @@ int simulationSetup()
   for(int i = 0; i<numberOfSources;i++)
     {
       using std::string;
-      verbosePrint(string("Sim ") + Double(i+1).str() + string(" of ") + Double(numberOfSources).str() + ": ");
+      verbosePrint(args,string("Sim ") + Double(i+1).str() + string(" of ") + Double(numberOfSources).str() + ": ");
 
-      fileNamePrefix = mainPrefix + Double((double) i).str();
-      std::string fullLensFilename = fileNamePrefix  + "lensedimage.bmp";
-      simulation(lens,sources, massDensity, 1,i,3,i);
+      args->fileNamePrefix = args->mainPrefix + Double((double) i).str();
+      std::string fullLensFilename = args->fileNamePrefix  + "lensedimage.bmp";
+      simulation(args,lens,sources, massDensity, 1,i,3);
 
 
 #ifndef __USE_BOINC__
-      lens->draw(fullLensFilename,false,gridSpace > 0,gridSpace);
+      lens->draw(fullLensFilename,false,args->gridSpace > 0,args->gridSpace);
 		
       if(sources != NULL)
 	{
-	  std::string fullSourceFilename = fileNamePrefix + "sources.bmp";
+	  std::string fullSourceFilename = args->fileNamePrefix + "sources.bmp";
 	  DEBUG_PRINT("Drawing sources");
 	  DEBUG_PRINT(sources);
-	  sources->draw(fullSourceFilename,false,gridSpace > 0,gridSpace);
+	  sources->draw(fullSourceFilename,false,args->gridSpace > 0,args->gridSpace);
 	}
 #endif
       DEBUG_PRINT("DELETING");
@@ -222,7 +253,6 @@ int simulationSetup()
       DEBUG_PRINT("deleted lens");
       delete sources;
       DEBUG_PRINT("delted sources");
-      Double cSucksALot(0.0);
       lens = new Plane<Double>(width,height, bgColor);
       sources = new Plane<Double>(width,height, bgColor);
     }
@@ -231,30 +261,22 @@ int simulationSetup()
   //making a combined image if multiple sources are used.
   if(numberOfSources > 1)
     {
-      verbosePrint("Combined Sim");
-      fileNamePrefix = mainPrefix + Double(numberOfSources).str();
-      simulation(lens,sources, massDensity, numberOfSources,-1,0,numberOfSources);
+      verbosePrint(args,"Combined Sim");
+      args->fileNamePrefix = args->mainPrefix + Double(numberOfSources).str();
+      simulation(args,lens,sources, massDensity, numberOfSources,-1,0);
 #ifndef __USE_BOINC__
-      lens->draw(fileNamePrefix+"lensedimage.bmp",false,gridSpace < 0,gridSpace);
-      sources->draw(fileNamePrefix+"sources.bmp",false,gridSpace < 0,gridSpace);
+      lens->draw(args->fileNamePrefix+"lensedimage.bmp",false,args->gridSpace < 0,args->gridSpace);
+      sources->draw(args->fileNamePrefix+"sources.bmp",false,args->gridSpace < 0,args->gridSpace);
 #endif
     }
 
-
-
-  DEBUG_PRINT("DELETING for the last time");
   delete randy;
   delete lens;
-  DEBUG_PRINT("BUT NOT HERE");
   delete sources;
-  DEBUG_PRINT("BUT NOT HERE Either");
   if(massDensity != 0)
     {
-      DEBUG_PRINT("Clearing all fields");
       massDensity->clearAllFields();
-      DEBUG_PRINT("all fields cleared");
       delete massDensity;
-      DEBUG_PRINT("mass density deleted");
     }
 	
   massDensity = 0;
@@ -266,7 +288,7 @@ int simulationSetup()
 
 
 
-int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens, int parameter1) throw (DavidException)
+int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens) throw (DavidException)
 {
 	
 	
@@ -275,11 +297,15 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	
   int N = lens->numberOfRows();//Plane is always square
 	
-  includeCricalCurveAndCaustic = false;
+  if(args == NULL)
+    throw DavidException("simulation: Need arguments. Got null pointer.",DavidException::NULL_POINTER);
+  args->includeCricalCurveAndCaustic = false;
+#if 0// deprecated??
   bool useRandom = false;//source placement
   if(useRandom)
     randy = new DRandom();
-	
+#endif
+
   int numberOfObsParameters = 6;
   double * lensParams = new double[10];
   double * params = new double[numberOfObsParameters];
@@ -296,42 +322,37 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 		
       createLensParams(lensParams,specificLens);
 
-      writeSourceInfo(sourceParams,specificSource, numberOfSources, randy, useRandom, N);
-      //UNCOMMENT ABOVE LINE AFTER TEST!!!
+      writeSourceInfo(args,sourceParams,specificSource, numberOfSources, randy, args->useRandom, N);
     }
   else
     {
-      DEBUG_PRINT("Loading parameters");
+      verbosePrint(args,"Loading parameters");
       loadParameters(params,lensParams,sourceParams,numberOfObsParameters,10,numberOfSources);
 
     }
   delete massDensity;//No memory leaks here!
 
-  DEBUG_PRINT("Creating Mass density");
-  massDensity = new DensityProfile(lensMassDensity, lensParams, params);
+  verbosePrint(args,"Creating Mass density");
+  massDensity = new DensityProfile(args->lensMassDensity, lensParams, params);
   GLAlgorithm * gls = new GLAlgorithm[numberOfSources];
 
   for(int i = 0;i<numberOfSources;i++)
     {
-      DEBUG_PRINT(lensMassDeflectionPlane);	    
-      if(runExistingDeflection)
+      if(args->runExistingDeflection)
 	{
 	  // USE EXISTING DEFLECTION PLANE
-	  std::string deflectionFilename(lensMassDeflectionPlane);
+	  const std::string& deflectionFilename = args->lensMassDeflectionPlane;
 	  
-	  verbosePrint(std::string("Parsing Deflection Plane: ")+deflectionFilename);
+	  verbosePrint(args,std::string("Parsing Deflection Plane: ")+deflectionFilename);
 	  deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
-			
-	  if(deflectionPlane == 0)
-	    DEBUG_PRINT("deflectionPlane is null");
 	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams[0],sources);
 	}
-      if(createDeflection)
+      if(args->createDeflection)
 	{
 
 	  // CREATE NEW DEFLECTION PLANE 
-	  verbosePrint(std::string("Creating Deflection Plane: ") + lensMassDeflectionPlane);
-	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,offset);
+	  verbosePrint(args,std::string("Creating Deflection Plane: ") + args->lensMassDeflectionPlane);
+	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,args->offset);
 
 #ifdef USE_MPI
 		  MPI_Comm lens_group;
@@ -344,31 +365,31 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 #ifdef USE_MPI
 	      utils::mpi_recombine(gls[i],lens_group);
 	      if(mpi_data.rank == utils::MASTER_RANK)
-	    	  gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+	    	  gls[i].getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
 
 #else
-	      gls[i].getDeflectionPlane()->savePlane(lensMassDeflectionPlane);
+	      gls[i].getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
 #endif
 	    }
 #ifdef USE_MPI
 	  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 	}
-      if(!createDeflection && !runExistingDeflection)
+      if(!args->createDeflection && !args->runExistingDeflection)
 	{
-	  verbosePrint("Running based on parameters");
+	  verbosePrint(args,"Running based on parameters");
 	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams[0],sources);
 	}
 		  
     }
 
 #ifndef __USE_BOINC__
-  verbosePrint("Running Sim");
-  if(runSim)//Run ray trace, else no sim
+  verbosePrint(args,"Running Sim");
+  if(args->runSim)//Run ray trace, else no sim
     {
       size_t X,Y,X0,Y0;
       Plane<math::Complex> * sourceLocations = 0;
-      if(savesourcelocations != 0)
+      if(args->savesourcelocations.size() != 0)
 	sourceLocations = new Plane<math::Complex>(N,N,math::Complex(0.0,0.0));
 
       X = lens->numberOfRows();
@@ -400,7 +421,7 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 		  try
 		    {
 		      sourceValue = lens->getValue(i,j) + gls[k].mapsToSource(i,j);
-		      if(sourceLocations != 0 && savesourcelocations != 0)
+		      if(sourceLocations != 0 && args->savesourcelocations.size() != 0)
 			{
 			  double * loc = gls[k].newLocation(i,j);
 			  math::Complex curr = math::Complex(loc[0],loc[1]);
@@ -418,39 +439,37 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
 	  if((i*100/N) >= (percentFinished+5))
 	    {
 	      percentFinished = (int) i*100/N;
-	      verbosePrint("Percent finished: ");
-	      VERBOSE_PRINT(percentFinished);
+	      verbosePrint(args,"Percent finished: ");
+	      verbosePrint(args,percentFinished);
 	    }
 	}
 
-      verbosePrint("Simulation Complete");
+      verbosePrint(args,"Simulation Complete");
 
-      if(savesourcelocations != 0 && sourceLocations != 0)
+      if(args->savesourcelocations.size() && sourceLocations != 0)
 	{
-	  verbosePrint(std::string("Writing source plane to ") + *savesourcelocations);
+	  verbosePrint(args,std::string("Writing source plane to ") + args->savesourcelocations);
 #ifdef USE_MPI
 	  utils::mpi_recombine(sourceLocations,MPI_COMM_WORLD);
 	  if(mpi_data.rank == utils::MASTER_RANK)
-	    sourceLocations->savePlane(*savesourcelocations);
+	    sourceLocations->savePlane(args->savesourcelocations);
 #else
-	  sourceLocations->savePlane(*savesourcelocations);
+	  sourceLocations->savePlane(args->savesourcelocations);
 #endif
 	}
     }//end if(runsim)
   else
     {
-      DEBUG_PRINT("No sim");
+      verbosePrint(args,"No sim");
     }
 #endif
 
 	
 #ifndef __USE_BOINC__
-  writeParameters(params,lensParams,sourceParams,numberOfSources);
+  writeParameters(args,params,lensParams,sourceParams,numberOfSources);
 #endif
 
-  DEBUG_PRINT("MADE IT THIS FAR!");
   delete [] gls;
-
   for(int i = 0; i< numberOfSources;i++)
     delete [] sourceParams[i];
   delete [] sourceParams;
@@ -461,7 +480,7 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
   sourceParams = 0;
 
   return 0;
-}/**/
+}
 
 
 template <class T> void buildSource(Plane<T> * source, double * sourceParams, T newValue)
@@ -528,14 +547,24 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 
 
 //If a specific sources is wanted specify it in specificSource, else specificSource < 0
-bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSources, utils::DRandom * randy, bool useRandom, int numberOfPixels)
+bool writeSourceInfo(struct ray_trace_arguments *args,
+		     double ** sourceParams, 
+		     int specificSource, int numberOfSources, 
+		     utils::DRandom * randy, bool useRandom, 
+		     int numberOfPixels)
 {
-  std::string fullFileName = fileNamePrefix+"sourceinfo.txt";
+  using namespace std;
+
+  string fullFileName;
+
+  if(args == NULL)
+    throw DavidException("writeSourceInfo: Need arguments. Got null pointer",DavidException::NULL_POINTER);
+
+  fullFileName = args->fileNamePrefix + "sourceinfo.txt";
+
   std::ofstream sourceLOC(fullFileName.c_str());
 
   int N = numberOfPixels;
-
-  using namespace std;
 
   for(int i = 0;i<numberOfSources;i++)
     {
@@ -550,7 +579,7 @@ bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSou
       sourceParams[i][6] = 255;//Source flux
 				
 		
-      if(useRandom)
+      if(args->useRandom)
 	{
 	  throw DavidException("FIX RANDOM SOURCE GENERATOR: SORRY ABOUT THIS :(");
 	  /*
@@ -628,9 +657,6 @@ bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSou
 	  if(sourceLOC.is_open())
 	    sourceLOC << sourceParams[i][0] << ", " << sourceParams[i][1] << std::endl;
 	}
-
-		
-
     }
   sourceLOC.close();
 
@@ -640,10 +666,15 @@ bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSou
 /**
  * writeParameters writes the parameters to 2 files: "human readable" file and a file which can be parsed by ray_trace
  */
-bool writeParameters(double * params,double * lensParams,double ** sourceParams, int numberOfSources)
+bool writeParameters(struct ray_trace_arguments *args,
+		     double * params,double * lensParams,double ** sourceParams, 
+		     int numberOfSources)
 {
-  std::string fullFileName = fileNamePrefix+"human-parameters.txt";
-  std::string fullFileName2 = fileNamePrefix+"parameters.txt";
+  if(args == NULL)
+    throw DavidException("writeParameters: Need arguments. Got null pointer",DavidException::NULL_POINTER);
+
+  std::string fullFileName = args->fileNamePrefix+"human-parameters.txt";
+  std::string fullFileName2 = args->fileNamePrefix+"parameters.txt";
   std::ofstream outfile(fullFileName.c_str());
   std::ofstream outfile2(fullFileName2.c_str());
   using namespace std;
@@ -691,7 +722,7 @@ bool writeParameters(double * params,double * lensParams,double ** sourceParams,
 	    }
 	}
       outfile << "Critical Curves included: ";
-      if(includeCricalCurveAndCaustic)
+      if(args->includeCricalCurveAndCaustic)
 	{
 	  outfile << "Yes" << endl;
 	  outfile2 << 1 ;
@@ -830,249 +861,268 @@ bool createLensParams(double * lensParams, int specificLens)
 }
 
 
-int parseArgs(int argc, char** argv)
+void default_arguments(struct ray_trace_arguments *args)
 {
-	
-  for(int i = 0;i<argc;i++)
-    {
-      DEBUG_PRINT(argv[i]);
-    }
+  if(args == NULL)
+    return;
 
-  runExistingDeflection = true;
-  createDeflection = !(runExistingDeflection);
-  runSim = true;
-
-  bool parsedParams = false;
-
-  for(int i = 0;i<argc;i++)
-    {
-      std::string bean = utils::lower_case(argv[i]);
-      if(bean == "--newlens")
-	{
-	  DEBUG_PRINT("newlens");
-	  lensMassDeflectionPlane = argv[i+1];
-	  runExistingDeflection = false;
-	  createDeflection = !(runExistingDeflection);
-	  runSim = false;
-	}
-      else if(bean == "--sourcebmp")
-	{
-	  sourceBMPFilename = argv[i+1];
-	  verbosePrint(argv[i+1]);
-	  verbosePrint("source:");
-	  verbosePrint(sourceBMPFilename);
-	
-	}
-      else if(bean == "--bgcolor")
-	{
-	  VERBOSE_PRINT("--bgcolor has been disabled");
-	  //for(int j = 0;j<3;j++)
-	  //  bgColor.setValue(j,Double(argv[i+j+1]).doubleValue());
-	}
-      else if(bean == "--offset")
-	{
-	  if(offset != 0)
-	    delete [] offset;
-	  
-	  offset = new double[2];
-	  offset[0] = Double(argv[i+1]).doubleValue();
-	  offset[1] = Double(argv[i+2]).doubleValue();
-	}
-      else if(bean == "--prefix")
-	{
-	  mainPrefix = argv[i+1];
-	}
-      else if(bean == "--deflectionmap" || bean == "--lens" )
-	{
-	  lensMassDeflectionPlane = argv[i+1];
-	  runExistingDeflection = true;
-	  createDeflection = !(runExistingDeflection);
-	  runSim = true;
-	}
-      else if(bean == "--forcerun")
-	{
-	  runSim = true;
-	}
-      else if(bean == "--stoprun")
-	{
-	  runSim = false;
-	}
-      else if(bean == "--usegrid")
-	{
-	  gridSpace = (int) Double(argv[i+1]).doubleValue();
-	  DEBUG_PRINT("grid size");
-	  DEBUG_PRINT(gridSpace);
-	}
-      else if(bean == "--drawsource")
-	{
-	  drawEllipse(argv[i+1]);
-	  return 0;
-	}
-      else if(bean == "--parameters" || bean == "--parameter")
-	{
-	  parameterArray = paramParser(argv[i+1]);
-	  parsedParams = true;
-	}
-      else if(bean == "--createsurfacemassdensity")
-	{
-	  std::string parameters = argv[i+1];
-	  std::string fileName = argv[i+2];
-	  createSurfaceMassDensity(parameters,fileName);
-
-	  return 0;
-	}
-      else if(bean == "--usesurfacemassdensity")
-	{
-	  std::string fileName = argv[i+1];
-	  lensMassDensity = Plane<Double>::readPlane(fileName);
-	}
-      else if(bean == "--daemon")
-	{
-	  runAsDaemon = true;
-	}
-      else if(bean == "--timestamp")
-	{
-	  useTimeStamp = true;
-	}
-      else if(bean == "--addplanes")
-	{
-	  if(argc < i+4)
-	    throw DavidException("I need to two planes to add and a file name for the sum.","Insufficient Arguments",DavidException::INVALID_ARGUMENT_ERROR_CODE);
-
-	  std::string left,right,out;
-	  left = argv[i+1];
-	  right = argv[i+2];
-	  out = argv[i+3];
-	  using utils::StringTokenizer;
-	  using math::Complex;
-	  Complex zero(0,0);
-	  Plane<Complex> * leftPlane = new Plane<Complex>(0,0,zero);
-	  Plane<Complex> * rightPlane = new Plane<Complex>(0,0,zero);
-	  leftPlane = Plane<Complex>::readPlane(left);
-	  rightPlane = Plane<Complex>::readPlane(right);
-	  verbosePrint(std::string("Adding ")+left + std::string(" to ") + right);
-	  DEBUG_PRINT(leftPlane);
-	  Plane<Complex> * outPlane = Plane<Complex>::addPlanes(leftPlane,rightPlane);
-		    
-	  verbosePrint(std::string("Saving sum as ")+out);
-	  outPlane->savePlane(out);
-
-	  delete leftPlane;
-	  delete rightPlane;
-	  delete outPlane;
-	  leftPlane = rightPlane = outPlane = 0;
-
-	  return 0;
-	}
-      else if(bean == "--subtractplanes")
-	{
-	  using utils::StringTokenizer;
-	  using math::Complex;
-	  Complex zero(0,0);
-	  Plane<Complex> * leftPlane = new Plane<Complex>(0,0,zero);
-	  Plane<Complex> * rightPlane = new Plane<Complex>(0,0,zero);
-	  std::string left,right,out;
-		    
-	  leftPlane = Plane<Complex>::readPlane(left = argv[i+1]);
-	  rightPlane = Plane<Complex>::readPlane(right = argv[i+2]);
-		    
-	  verbosePrint(std::string("Subtracting ") + left + std::string(" and ") + right);
-	  Plane<Complex> * outPlane = Plane<Complex>::subtractPlanes(leftPlane,rightPlane);
-
-	  verbosePrint(std::string("Saving difference as ")+(out = argv[i+3]));
-	  outPlane->savePlane(out);
-
-	  delete leftPlane;
-	  delete rightPlane;
-	  delete outPlane;
-	  leftPlane = rightPlane = outPlane = 0;
-		    
-	  return 0;
-	}
-      else if(bean == "--glellipsebounds" || bean == "--glellipse")
-	{
-	  using utils::StringTokenizer;
-	  StringTokenizer tokie = StringTokenizer(argv[i+1],",");
-
-	  for(int i = 0;i<4;i++)
-	    glellipseBounds[i] = (int) Double(tokie.nextToken()).doubleValue();
-			  
-	}
-      else if(bean == "--savesourcelocations")
-	{
-	  savesourcelocations = new std::string(argv[i+1]);
-	}
-      else if(bean == "--drawremovedarea")
-	{
-	  drawRemovedArea = true;
-	}
-      else if(bean == "--squareplane")
-	{
-	  squarePlane(argv[i+1]);
-	  return 0;
-	}
-      else if(bean == "--help")
-	{
-#ifndef __USE_BOINC__
-	  verbosePrint("Options are:");
-	  verbosePrint("--newlens <lens>");
-	  verbosePrint("Creates a new lens saved as <lens>. Causes simulation to no happen. Override this with --forcerun");
-	  verbosePrint("--createsurfacemassdensity <parameterfile> <outfile>");
-	  verbosePrint("Creates 2-D massdensity (double values) based on the given parameters.");
-	  verbosePrint("--usesurfacemassdensity <infile>");
-	  verbosePrint("Uses an already created 2-D massdensity (double values).");
-
-	  verbosePrint("--sourceBMP <source.bmp>");
-	  verbosePrint("Uses <source.bmp> as the source plane");
-	  verbosePrint("--deflectionMap <deflectionMap.txt>");
-	  verbosePrint("Uses <deflectionMap.txt> as the deflection plane");
-	  verbosePrint("--lens <deflectionMap.txt>");
-	  verbosePrint("Uses <deflectionMap.txt> as the deflection plane. Same as --deflectionMap  (typing lens was a habit)");
-	  verbosePrint("--forceRun");
-	  verbosePrint("Forces the Simulation to run, whether or not a deflection map was created or read");
-	  verbosePrint("--stopRun");
-	  verbosePrint("Forces the Simulation NOT to run, whether or not a deflection map was created or read");
-	  verbosePrint("--prefix");
-	  verbosePrint("Sets the output file(s) prefix ");
-	  verbosePrint("--useGrid (size)");
-	  verbosePrint("Draws a grid on output images. Size is the pixel spacing of the grid.");
-	  verbosePrint("--bgcolor R G B");
-	  verbosePrint("Sets the background color of the images to the RGB value provided");
-	  verbosePrint("--offset x y");
-	  verbosePrint("Set a pixel offset for the calculation.");
-	  verbosePrint("--parameters <file name>");
-	  verbosePrint("Parse file provided file for parameters.");
-	  verbosePrint("--drawsource a,e,width,height,x,y,R,G,B,filename");
-	  verbosePrint("Draws an RGB source of eccentricity e, semimajor axis length a, at (x,y), saved as width by height sized a bitmap called filename. Program exits when completed.");
-	  verbosePrint("--glellipsebounds left,right,upper,lower");
-	  verbosePrint("Sets bounds on calculation of deflection grid. This allows embarrisingly parallel processing.");
-	  verbosePrint("--glellipse left,right,upper,lower");
-	  verbosePrint("Same as glellipsebounds. Added to keep typos from killing processing time.");
-	  verbosePrint("--timestamp");
-	  verbosePrint("Places a timestamp at the beginning of every STDOUT message.");
-	  verbosePrint("--addplanes leftplane rightplane outplane");
-	  verbosePrint("Adds leftplane and rightplane and saves the sum as outplane");
-	  verbosePrint("--subtractplanes leftplane rightplane outplane");
-	  verbosePrint("Subtracts leftplane and rightplane and saves the difference as outplane");
-	  verbosePrint("--squareplane filename");
-	  verbosePrint("Takes the plane, filename, and makes it a square by buffing the shorter dimension with zeros");
-	  verbosePrint("--savesourcelocations filename");
-	  verbosePrint("Runs raytracing and saves the location of source points in the lens plane.");
-#endif			
-
-			
-	  return 0;
-	}
-
-
-    }
-
-  if(!parsedParams)
-    parameterArray = 0;
-
-  return -42;
-
+  args->runExistingDeflection = true;
+  args->createDeflection = false;
+  args->runSim = true;
+  args->offset = NULL;
+  args->lensMassDensity = NULL;
+  args->gridSpace = -1000;
+  args->mainPrefix = "run-";
+  args->sourceBMPFilename = "source.bmp";
+  args->lensMassDeflectionPlane = "lens";
+  args->drawRemovedArea = false;
+  args->useTimeStamp = false;
+  args->runAsDaemon = false;
+  args->verbose = false;
+  args->useRandom = false;
 }
+
+int planes_op(char *csv_names,const char op)
+{
+  char *token, *saveptr;
+  std::string lhs_name, rhs_name, result_name;
+  token = strtok_r(csv_names,",",&saveptr);
+  if(token == NULL)
+    throw DavidException("planes_op: Usage <left plane>,<right plane>,<result name>",DavidException::DATA_FORMAT_ERROR);
+  lhs_name = token;
+
+  token = strtok_r(NULL,",",&saveptr);
+  if(token == NULL)
+    throw DavidException("planes_op: Usage <left plane>,<right plane>,<result name>",DavidException::DATA_FORMAT_ERROR);
+  rhs_name = token;
+  
+  token = strtok_r(NULL,",",&saveptr);
+  if(token == NULL)
+    throw DavidException("planes_op: Usage <left plane>,<right plane>,<result name>",DavidException::DATA_FORMAT_ERROR);
+  result_name = token;
+  
+  if(!access(lhs_name.c_str(),R_OK))
+    throw DavidException("planes_op: Could not open left plane.",DavidException::IO_ERROR_CODE);
+  if(!access(rhs_name.c_str(),R_OK))
+    throw DavidException("planes_op: Could not open right plane.",DavidException::IO_ERROR_CODE);
+  if(!access(result_name.c_str(),W_OK))
+    throw DavidException("planes_op: Cannot write result file.",DavidException::IO_ERROR_CODE);
+  
+  Plane<Double> *lhs = NULL, *rhs = NULL, *result = NULL;
+  try{
+    lhs = Plane<Double>::readPlane(lhs_name);
+    rhs = Plane<Double>::readPlane(rhs_name);
+    switch(op)
+      {
+      case '+':
+	result = Plane<Double>::addPlanes(lhs,rhs);
+	break;
+      case '-':
+	result = Plane<Double>::subtractPlanes(lhs,rhs);
+	break;
+      default:
+	{
+	  std::string error = "planes_op: Unknown operator: " + op;
+	  throw DavidException(error,DavidException::FORMAT_ERROR_CODE);
+	}
+      }
+    if(result != NULL)
+      result->savePlane(result_name);
+    else
+      throw DavidException("planes_op: Result was NULL.",DavidException::DATA_FORMAT_ERROR);
+  }
+  catch(DavidException de)
+    {
+      if(lhs != NULL)
+	delete lhs;
+      if(rhs != NULL)
+	delete rhs;
+      if(lhs != NULL)
+	delete result;
+      throw de;
+    }
+
+  delete lhs;
+  delete rhs;
+  delete result;
+  
+  return 0;
+}
+
+void parse_bounds(char *csv_bounds)
+{
+  char *token, *saveptr;
+
+  if(glellipseBounds == NULL)
+    glellipseBounds = new int[4];
+
+    
+  token = strtok_r(csv_bounds,",",&saveptr);
+  for(size_t i = 0;i<4;i++)
+    {
+      if(token == NULL)
+	throw DavidException("parse_bounds: Usage <left plane>,<right plane>,<result name>",DavidException::DATA_FORMAT_ERROR);
+      if(sscanf(token,"%i",&glellipseBounds[i]) != 1)
+	throw DavidException("parse_bounds: Could not read the bounds.",DavidException::FORMAT_ERROR_CODE);
+      token = strtok_r(NULL,",",&saveptr);
+    }
+}
+
+int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
+{
+  static const char short_opts[] = "dg:hl:m:n:p:tv";
+  int option_index = 0, c;
+  void print_help();
+
+  while(true)
+    {
+      c = getopt_long(argc,argv,short_opts,ray_trace_options,&option_index);
+      if(c == -1)
+	break;
+
+      switch(c)
+	{
+	case 'n':
+	  {
+	    args->lensMassDeflectionPlane = optarg;
+	    args->runExistingDeflection = false;
+	    args->createDeflection = true;
+	    args->runSim = false;
+	    break;
+	  }
+	case SOURCE_BMP:
+	  args->sourceBMPFilename = optarg;
+	  break;
+	case RBG_COLOR:
+	  std::cout << "--bgcolor has been disabled" << std::endl;
+	  break;
+	case XOFFSET:
+	  {
+	    if(args->offset == NULL)
+	      args->offset = new double[2];
+	    sscanf(optarg,"%f",&args->offset[0]);
+	    break;
+	  }
+	case YOFFSET:
+	  {
+	    if(args->offset == NULL)
+	      args->offset = new double[2];
+	    sscanf(optarg,"%f",&args->offset[1]);
+	    break;
+	  }
+	case FILE_PREFIX:
+	  args->mainPrefix = optarg;
+	  break;
+	case 'l':case DEFLECTION_MAP:
+	  args->lensMassDeflectionPlane = optarg;
+	  args->runExistingDeflection = true;
+	  args->createDeflection = false;
+	  args->runSim = true;
+	  break;
+	case FORCE_RUN:
+	  args->runSim = false;
+	  break;
+	case STOP_RUN:
+	  args->runSim = true;
+	  break;
+	case USE_GRID:
+	  args->gridSpace = (int) Double(optarg).doubleValue();
+	  break;
+	case 'p':
+	  paramParser(optarg);
+	  break;
+	case CREATE_MASS:
+	  args->makeMassDensity = optarg;
+	  break;
+	case 'm':
+	  args->lensMassDensity = Plane<Double>::readPlane(optarg);
+	  break;
+	case 'd':
+	  args->runAsDaemon = true;
+	  break;
+	case 't':
+	  args->useTimeStamp = true;
+	  break;
+	case ADD_PLANES:
+	  return planes_op(optarg,'+');
+	case SUBTRACT_PLANES:
+	  return planes_op(optarg,'-');
+	case 'g':
+	  parse_bounds(optarg);
+	  break;
+	case SAVESOURCE_LOC:
+	  args->savesourcelocations = optarg;
+	  break;
+	case DRAW_REMOVED_AREA:
+	  args->drawRemovedArea = true;
+	  break;
+	case SQUARE_PLANE:
+	  squarePlane(optarg);
+	  return 0;
+	case 'v':
+	  args->verbose = true;
+	case 'h':
+	default:
+	  print_help();
+	  return 0;
+	}//end of switch(c)
+    }
+  return -42;
+}
+
+
+void print_help()
+{
+  struct ray_trace_arguments blah;
+  default_arguments(&blah);
+  blah.verbose = true;
+  verbosePrint(&blah, "Options are:");
+  verbosePrint(&blah, "--newlens <lens>");
+  verbosePrint(&blah, "Creates a new lens saved as <lens>. Causes simulation to no happen. Override this with --forcerun");
+  verbosePrint(&blah, "--createsurfacemassdensity <parameterfile> <outfile>");
+  verbosePrint(&blah, "Creates 2-D massdensity (double values) based on the given parameters.");
+  verbosePrint(&blah, "--usesurfacemassdensity <infile>");
+  verbosePrint(&blah, "Uses an already created 2-D massdensity (double values).");
+
+  verbosePrint(&blah, "--sourceBMP <source.bmp>");
+  verbosePrint(&blah, "Uses <source.bmp> as the source plane");
+  verbosePrint(&blah, "--deflectionMap <deflectionMap.txt>");
+  verbosePrint(&blah, "Uses <deflectionMap.txt> as the deflection plane");
+  verbosePrint(&blah, "--lens <deflectionMap.txt>");
+  verbosePrint(&blah, "Uses <deflectionMap.txt> as the deflection plane. Same as --deflectionMap  (typing lens was a habit)");
+  verbosePrint(&blah, "--forceRun");
+  verbosePrint(&blah, "Forces the Simulation to run, whether or not a deflection map was created or read");
+  verbosePrint(&blah, "--stopRun");
+  verbosePrint(&blah, "Forces the Simulation NOT to run, whether or not a deflection map was created or read");
+  verbosePrint(&blah, "--prefix");
+  verbosePrint(&blah, "Sets the output file(s) prefix ");
+  verbosePrint(&blah, "--useGrid (size)");
+  verbosePrint(&blah, "Draws a grid on output images. Size is the pixel spacing of the grid.");
+  verbosePrint(&blah, "--bgcolor R G B");
+  verbosePrint(&blah, "Sets the background color of the images to the RGB value provided");
+  verbosePrint(&blah, "--offset x y");
+  verbosePrint(&blah, "Set a pixel offset for the calculation.");
+  verbosePrint(&blah, "--parameters <file name>");
+  verbosePrint(&blah, "Parse file provided file for parameters.");
+  verbosePrint(&blah, "--drawsource a,e,width,height,x,y,R,G,B,filename");
+  verbosePrint(&blah, "Draws an RGB source of eccentricity e, semimajor axis length a, at (x,y), saved as width by height sized a bitmap called filename. Program exits when completed.");
+  verbosePrint(&blah, "--glellipsebounds left,right,upper,lower");
+  verbosePrint(&blah, "Sets bounds on calculation of deflection grid. This allows embarrisingly parallel processing.");
+  verbosePrint(&blah, "--glellipse left,right,upper,lower");
+  verbosePrint(&blah, "Same as glellipsebounds. Added to keep typos from killing processing time.");
+  verbosePrint(&blah, "--timestamp");
+  verbosePrint(&blah, "Places a timestamp at the beginning of every STDOUT message.");
+  verbosePrint(&blah, "--addplanes leftplane rightplane outplane");
+  verbosePrint(&blah, "Adds leftplane and rightplane and saves the sum as outplane");
+  verbosePrint(&blah, "--subtractplanes leftplane rightplane outplane");
+  verbosePrint(&blah, "Subtracts leftplane and rightplane and saves the difference as outplane");
+  verbosePrint(&blah, "--squareplane filename");
+  verbosePrint(&blah, "Takes the plane, filename, and makes it a square by buffing the shorter dimension with zeros");
+  verbosePrint(&blah, "--savesourcelocations filename");
+  verbosePrint(&blah, "Runs raytracing and saves the location of source points in the lens plane.");
+}
+
+
 
 /**
  * This Method Parses Parameters from a text file and returns them as
@@ -1091,6 +1141,9 @@ std::string * paramParser(const char * fileName)
   std::string * paramsVector;
   int vectorCount = 0;
   size_t npos = std::string::npos;
+
+  if(fileName == NULL)
+    return NULL;
 
   if(infile.is_open())
     {
@@ -1164,20 +1217,16 @@ void loadParameters(double * params,double * lensParams,double ** sourceParams,i
     {	
       sourceParams[sourceNumber] = new double[7];
       for(int i = 0;i<7;i++)
-	{
 	  sourceParams[sourceNumber][i] = Double(parameterArray[vectorCount++]).doubleValue();
-	  
-	}
-      
     }
   
   //Sets the glellipseBounds to the whole array if the bounds are not yet set.
 		
 		
   if(glellipseBounds[1] < 0)
-    glellipseBounds[1] = params[0];
+    glellipseBounds[1] = (int)floor(params[0]);
   if(glellipseBounds[3] < 0)
-    glellipseBounds[3] = params[0];
+    glellipseBounds[3] = (int)floor(params[0]);
   if(glellipseBounds[0] < 0)
     glellipseBounds[0] = 0;
   if(glellipseBounds[2] < 0)
@@ -1187,7 +1236,7 @@ void loadParameters(double * params,double * lensParams,double ** sourceParams,i
 
 
 
-void drawEllipse(const char * parameters)
+void drawEllipse(const struct ray_trace_arguments *args, const char * parameters)
 {
   using utils::StringTokenizer;
   using utils::PlaneCreator;
@@ -1225,7 +1274,7 @@ void drawEllipse(const char * parameters)
   newPlane->addEllipse(A, E, X, Y, object);
   Plane<Double> * planizzle = newPlane->getPlane();
 	
-  verbosePrint(std::string("Drawing ")+filename);
+  verbosePrint(args,std::string("Drawing ")+filename);
   planizzle->draw(filename);
 	
   delete newPlane;
@@ -1233,9 +1282,10 @@ void drawEllipse(const char * parameters)
 
 }
 
-void createSurfaceMassDensity(std::string parameters, std::string fileName)
+void createSurfaceMassDensity(const std::string& fileName)
 {
-  parameterArray = paramParser(parameters.c_str());
+  if(parameterArray==NULL)
+    throw DavidException("createSurfaceMassDensity: Cannot create a mass density map without paramters.",DavidException::NULL_POINTER);
 
   int numberOfSources = 1;
   double * params = new double[6];
@@ -1243,7 +1293,7 @@ void createSurfaceMassDensity(std::string parameters, std::string fileName)
   double ** sourceParams = new double*[numberOfSources];
   loadParameters(params,lensParams,sourceParams,6,10,numberOfSources);
   
-  Plane<Double> * dummy = new Plane<Double>(params[0],params[0],42);
+  Plane<Double> * dummy = new Plane<Double>(params[0],params[0],42.0);
   DensityProfile * profile = new DensityProfile(dummy,lensParams,params);
 
   profile->drawPlane();
@@ -1273,35 +1323,27 @@ std::string getTime()
 }
 
 
-void verbosePrint(const char * string)
+void verbosePrint(const struct ray_trace_arguments *args, const char * string)
 {
+  if(args->verbose == 0)
+    return;
 
-  std::string printString(string);
-
-  if(runAsDaemon || useTimeStamp)
-    {
-      std::string timeMe = getTime();
-      printString = timeMe.substr(0,timeMe.length() - 1) + std::string(": ") + printString;
-    }
-
-  std::cout << printString << std::endl;
-
+  if(args->runAsDaemon || args->useTimeStamp)
+    std::cout << getTime() << ": ";
+  std::cout << string << std::endl;
 }
-
 
 void squarePlane(const char * fileName)
 {
   
   using math::Complex;
   
-  Complex cZero(0.0,0.0);
+  static const Complex cZero(0.0,0.0);
 
   Plane<Complex> * oldPlane = new Plane<Complex>(0,0,cZero);
   oldPlane = Plane<Complex>::readPlane(fileName);
 
   int width,height;
-  DEBUG_PRINT("here");
-  DEBUG_PRINT(oldPlane);
 
   if(oldPlane->numberOfRows() > oldPlane->numberOfColumns())
     width = height = oldPlane->numberOfRows();

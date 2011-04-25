@@ -7,7 +7,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <math.h>
+#include <cmath>
+#include <getopt.h>
 
 #ifdef _WIN32
 #include <time.h>
@@ -59,13 +60,13 @@ MPIData mpi_data;
  */
 template <class T> void buildSource(Plane<T> *, double * sourceParams,T);///< constructs the source plane.
 template <class T> void constructLens(Plane<T> * source, Plane<T> * lens, T valueOfSource, T lensValue);///< constructs the lens plane.
-bool writeSourceInfo(double ** sourceParams, int specificSource, int numberOfSources, utils::DRandom * randy, bool useRandom, int numberOfPixels);///< writes the source info(eg location) to a text file.
+bool writeSourceInfo(struct ray_trace_arguments *args, double ** sourceParams, int specificSource, int numberOfSources, utils::DRandom * randy, bool useRandom, int numberOfPixels);///< writes the source info(eg location) to a text file.
 
 /**
  * Main start method.
  * Before this method is called arguments are parsed and then sent to sub_main
  */
-int sub_main(int argc, char** argv);
+int sub_main(struct ray_trace_arguments *args);
 
 /**
  * Intermediate Main Method.
@@ -85,7 +86,7 @@ int super_main(int argc, char** argv);
  * @param numberOfSources.
  * @return bool true if writing was successful.
  */
-bool writeParameters(double * params,double * lensParams,double ** sourceParams, int numberOfSources);
+bool writeParameters(struct ray_trace_arguments *args, double * params,double * lensParams,double ** sourceParams, int numberOfSources);
 
 /**
  * The main simulation routine.
@@ -101,7 +102,7 @@ bool writeParameters(double * params,double * lensParams,double ** sourceParams,
  * @return int zero if successful
  * @throw DavidException Exception thrown upon error (if you're lucky)
  */
-int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens, int parameter1) throw (DavidException);
+int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens) throw (DavidException);
 
 /**
  * Creates parameters for a lens to be used in the simulation
@@ -111,12 +112,17 @@ int simulation(Plane<Double> * lens, Plane<Double> * sources, DensityProfile * m
  * @return bool true (always, don't ask why)
  */
 bool createLensParams(double * lensParams, int specificLens);///< Sets the lens parameters.
-int simulationSetup();
+int simulationSetup(struct ray_trace_arguments *args);
+
+/**
+ * Fills the argument structure will default data
+ */
+void default_arguments(struct ray_trace_arguments *args);
 
 /**
  * Parses arguments sent from command line.
  */
-int parseArgs(int argc, char** argv);
+int parseArgs(int argc, char** argv,struct ray_trace_arguments *args);
 
 /**
  * Parses the Parameter std::string Array.
@@ -140,7 +146,7 @@ void loadParameters(double * params,double * lensParams,double ** sourceParams,i
 /**
  * Creates a 2 Dimensional Mass Array from lens parameters.
  */
-void createSurfaceMassDensity(std::string parameters, std::string fileName);
+void createSurfaceMassDensity(const std::string& fileName);
 
 /**
  * Returns a std::string containing the current time.
@@ -155,30 +161,14 @@ std::string getTime();
  */
 void squarePlane(const char * fileName);
 
-
-std::string fileNamePrefix;///< prefix of files created in the simulation
 utils::DRandom * randy;///< Random number Generator.
-bool includeCricalCurveAndCaustic;///< Whether Critical Curves and Caustics should be used.
 Plane<math::Complex> * deflectionPlane;
-std::string lensMassDeflectionPlane;
-std::string sourceBMPFilename;
-bool runExistingDeflection;
-bool createDeflection;
-bool runSim;
-std::string mainPrefix;
-bool runAsDaemon;
-int gridSpace;
 int overallParamNumber;
 std::string * parameterArray;
-std::string * savesourcelocations;
 Double bgColor;
-void drawEllipse(const char * parameters);
-Plane<Double> * lensMassDensity;
-void verbosePrint(const char * string);
-void verbosePrint(std::string string){return verbosePrint(string.c_str());}
-void verbosePrint(double val){return verbosePrint(Double(val).str().c_str());}
+void drawEllipse(const struct ray_trace_arguments *args,const char * parameters);
+void verbosePrint(const struct ray_trace_arguments *args, const char * string);
+void verbosePrint(const struct ray_trace_arguments *args, std::string string){return verbosePrint(args,string.c_str());}
+void verbosePrint(const struct ray_trace_arguments *args, double val){return verbosePrint(args,Double(val).str().c_str());}
 int * glellipseBounds;
-bool useTimeStamp;
-bool drawRemovedArea;
-double * offset;//Offset of the computational grid (in pixels)
 #endif
