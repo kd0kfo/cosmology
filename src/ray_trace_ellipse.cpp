@@ -37,6 +37,20 @@ static const struct option ray_trace_options[] =
     {0,0,0,0}
   };
 
+
+void DefaultParameters(struct general_parameters *params)
+{
+  if(params == NULL)
+    return;
+
+  params->ndim = 480; //N number of pixels, area = 
+  params->arcsec_per_pixel = .38; //arc length of each pixel in arcseconds
+  params->G = 6.67*pow((double) 10,(double) -8);//G, newtonian grav. constant
+  params->solar_mass = 2*pow((double) 10,(double) 33);//Solar mass, grams
+  params->distance_scale = 3.09*pow((double) 10, (double) 24);//distance scale Mpc
+  params->c = 3*pow(10.0,10.0);//speed of light in cm/s
+}
+
 #ifndef __USE_BOINC__
 int main(int argc, char** argv)
 {
@@ -308,27 +322,20 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
 #endif
 
   int numberOfObsParameters = 6;
-  double * lensParams = new double[10];
-  double * params = new double[numberOfObsParameters];
-  double ** sourceParams = new double*[numberOfSources];
+  struct lens_parameters lensParams;
+  struct general_parameters params;
+  std::vector<struct source_parameters>sourceParams;
 
   if(parameterArray == 0)
     {
-      params[0] = N; //N number of pixels, area = 
-      params[1] = .38; //arc length of each pixel in arcseconds
-      params[2] = 6.67*pow((double) 10,(double) -8);//G, newtonian grav. constant
-      params[3] = 2*pow((double) 10,(double) 33);//Solar mass, grams
-      params[4] = 3.09*pow((double) 10, (double) 24);//distance scale Mpc
-      params[5] = 3*pow(10.0,10.0);//speed of light in cm/s
-		
-      createLensParams(lensParams,specificLens);
+      createLensParams(&lensParams,specificLens);
 
       writeSourceInfo(args,sourceParams,specificSource, numberOfSources, randy, args->useRandom, N);
     }
   else
     {
       verbosePrint(args,"Loading parameters");
-      loadParameters(params,lensParams,sourceParams,numberOfObsParameters,10,numberOfSources);
+      loadParameters(&params,&lensParams,&sourceParams,numberOfSources);
 
     }
   delete massDensity;//No memory leaks here!
@@ -346,14 +353,14 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
 	  
 	  verbosePrint(args,std::string("Parsing Deflection Plane: ")+deflectionFilename);
 	  deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
-	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams[0],sources);
+	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams.at(0),sources);
 	}
       if(args->createDeflection)
 	{
 
 	  // CREATE NEW DEFLECTION PLANE 
 	  verbosePrint(args,std::string("Creating Deflection Plane: ") + args->lensMassDeflectionPlane);
-	  gls[i] = GLAlgorithm(massDensity,sourceParams[0],sources,glellipseBounds,args->offset);
+	  gls[i] = GLAlgorithm(massDensity,sourceParams.at(0),sources,glellipseBounds,args->offset);
 
 #ifdef USE_MPI
 		  MPI_Comm lens_group;
@@ -379,7 +386,7 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
       if(!args->createDeflection && !args->runExistingDeflection)
 	{
 	  verbosePrint(args,"Running based on parameters");
-	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams[0],sources);
+	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams.at(0),sources);
 	}
 		  
     }
@@ -484,13 +491,13 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
 }
 
 
-template <class T> void buildSource(Plane<T> * source, double * sourceParams, T newValue)
+template <class T> void buildSource(Plane<T> * source, const struct source_parameters& sourceParams, T newValue)
 {
   
-  double xCenter = sourceParams[0];
-  double yCenter = sourceParams[1];
-  double a = sourceParams[3];
-  double e = sourceParams[4];
+  double xCenter = sourceParams.xcenter;
+  double yCenter = sourceParams.ycenter;
+  double a = sourceParams.semimajor_length;
+  double e = sourceParams.eccentricity;
 	
   for(int i = 0; i<source->numberOfColumns();i++)
     {
@@ -1030,7 +1037,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  args->gridSpace = (int) Double(optarg).doubleValue();
 	  break;
 	case 'p':
-	  parameterArray = paramParser(optarg);
+	  args->parameter_name = optarg;
 	  break;
 	case CREATE_MASS:
 	  args->makeMassDensity = optarg;
@@ -1197,34 +1204,155 @@ std::string * paramParser(const char * fileName)
   return paramsVector;
 }
 
-void loadParameters(double * params,double * lensParams,double ** sourceParams,int numParams, int numLensParams, int numberOfSources)
+void loadGeneralParameters(struct general_parameters * params, const utils::XMLNode *node)
 {
-  int vectorCount = 3;//This tells the parser how much to skip in the parameter file header which contains the number of parameters in each category.
+  utils::XMLNode *curr;
 
-  for(int i = 0;i<numParams;i++)
-    params[i] = Double(parameterArray[vectorCount++]).doubleValue();
+  if(params == NULL || node == NULL)
+    return;
 
-
-  //Ignoreing critical curve stuff for now
-  vectorCount++;
-
-  //"Lens Parameters:"
-  for(int i = 0;i<numLensParams;i++)
-    {			
-      
-      lensParams[i] =Double(parameterArray[vectorCount++]).doubleValue();
+  std::istringstream buff;
+  double val;
+  for(curr = node->children;curr != NULL;curr = curr->siblings)
+    {
+      const std::string& name = curr->getName();
+      buff.clear();buff.str(curr->getText());
+      buff >> val;
+      if(buff.fail())
+	{
+	  std::ostringstream error;
+	  error << "loadGeneralParameters: Invalid value of " << curr->getText() << " for " << name;
+	  throw DavidException(error,DavidException::FORMAT_ERROR_CODE);
+	}
+	 
+      if(name == "ndim")
+	params->ndim = (int)ceil(val);
+      else if(name == "arcsec_per_pixel")
+	params->arcsec_per_pixel = val;
+      else if(name == "G")
+	params->G = val;
+      else if(name == "solar_mass")
+	params->solar_mass = val;
+      else if(name == "distance_scale")
+	params->distance_scale = val;
+      else if(name == "showcriticalcurves")
+	params->showCriticalCurves;
+      else
+	std::cerr << "WARNING - Unknown General Parameter: " << name << std::endl;
     }
-  //"Source Parameters:"
-  for(int sourceNumber = 0;sourceNumber<numberOfSources;sourceNumber++)
-    {	
-      sourceParams[sourceNumber] = new double[7];
-      for(int i = 0;i<7;i++)
-	  sourceParams[sourceNumber][i] = Double(parameterArray[vectorCount++]).doubleValue();
+}
+
+void loadLensParameters(struct lens_parameters * params, const utils::XMLNode *node)
+{
+  utils::XMLNode *curr;
+
+  if(params == NULL || node == NULL)
+    return;
+
+  std::istringstream buff;
+  double val;
+  for(curr = node->children;curr != NULL;curr = curr->siblings)
+    {
+      const std::string& name = curr->getName();
+      buff.clear();buff.str(curr->getText());
+      buff >> val;
+      if(buff.fail())
+	{
+	  std::ostringstream error;
+	  error << "loadLensParameters: Invalid value of " << curr->getText() << " for " << name;
+	  throw DavidException(error,DavidException::FORMAT_ERROR_CODE);
+	}
+      
+      if(name == "xcenter")
+	params->xcenter = (int)ceil(val);
+      else if(name == "ycenter")
+	params->ycenter = (int)ceil(val);
+      else if(name == "redshift")
+	params->redshift = val;
+      else if (name == "velocity_dispersion")
+	params->velocity_dispersion = val;
+      else if (name == "mass_density")
+	params->mass_density = val;
+      else if (name == "shear")
+	params->shear = val;
+      else if (name == "semimajor_length")
+	params->semimajor_length = val;
+      else if (name == "eccentricity")
+	params->eccentricity = val;
+      else
+	std::cerr << "WARNING - Unknown Lens Parameter: " << name << std::endl;
+    }
+}
+
+struct source_parameters readGeneralParameters(const XMLNode *node)
+{
+  utils::XMLNode *curr;
+
+  if(node == NULL)
+    return;
+
+  struct source_parameters params;
+  std::istringstream buff;
+  double val;
+  for(curr = node->children;curr != NULL;curr = curr->siblings)
+    {
+      const std::string& name = curr->getName();
+      buff.clear();buff.str(curr->getText());
+      buff >> val;
+      if(buff.fail())
+	{
+	  std::ostringstream error;
+	  error << "loadSourceParameters: Invalid value of " << curr->getText() << " for " << name;
+	  throw DavidException(error,DavidException::FORMAT_ERROR_CODE);
+	}
+
+      if(name == "xcenter")
+	params.xcenter = (int)ceil(val);
+      else if(name == "ycenter")
+	params.ycenter = (int)ceil(val);
+      else if(name == "redshift")
+	params.redshift = val;
+      else if(name == "semimajor_length")
+	params.semimajor_length = val;
+      else if(name == "eccentricity")
+	params.eccentricity = val;
+      else if(name == "flux")
+	params.flux = val;
+      else
+	std::cerr << "WARNING - Unknown Source Parameter: " << name << std::endl;	
+    }      
+  return params;
+}
+
+
+void loadParameters(struct ray_trace_arguments *args,struct general_parameters * params,struct lens_parameters * lensParams,std::vector<struct source_parameters> *sourceParams)
+{
+  using namespace utils;
+
+  if(args == NULL || params == NULL || lensParams == NULL || sourceParams == NULL)
+ 
+    XMLParser parser;
+  const XMLNode *curr;
+  parser.parse(args->parameter_name);
+  for(curr = parser->head;curr != NULL;curr = curr->siblings)
+    {
+      if(curr->getName() == "general")
+	loadGeneralParameters(curr,params);
+      else if(curr->getName() == "lens")
+	loadLensParameters(curr,lensParams);
+      else if(curr->getName() == "source")
+	sourceParams->push_back(readSouParameters(curr));
+      else
+	throw DavidException("loadParameters: Invalid parameter tag: " + curr->getName(),DavidException::FORMAT_ERROR_CODE);
     }
   
-  //Sets the glellipseBounds to the whole array if the bounds are not yet set.
-		
-		
+
+  // Default values of glellipseBounds if not set
+  if(glellipseBounds = NULL)
+    {
+      glellipseBounds = new int[4];
+      memset(glellipseBounds,-1,4);
+    }
   if(glellipseBounds[1] < 0)
     glellipseBounds[1] = (int)floor(params[0]);
   if(glellipseBounds[3] < 0)
@@ -1290,24 +1418,21 @@ void createSurfaceMassDensity(const std::string& fileName)
     throw DavidException("createSurfaceMassDensity: Cannot create a mass density map without paramters.",DavidException::NULL_POINTER);
 
   int numberOfSources = 1;
-  double * params = new double[6];
-  double * lensParams = new double[10];
-  double ** sourceParams = new double*[numberOfSources];
-  loadParameters(params,lensParams,sourceParams,6,10,numberOfSources);
+  //double * params = new double[6];
+  //double * lensParams = new double[10];
+  //double ** sourceParams = new double*[numberOfSources];
+  struct general_parameters params;
+  struct lens_parameters lensParams;
+  struct source_parameters *sourceParams = new struct source_parameter[numberOfSources];
+  loadParameters(&params,&lensParams,sourceParams,numberOfSources);
   
-  Plane<Double> * dummy = new Plane<Double>(params[0],params[0],42.0);
+  Plane<Double> * dummy = new Plane<Double>(params.ndim,params.ndim,42.0);
   DensityProfile * profile = new DensityProfile(dummy,lensParams,params);
 
   profile->drawPlane();
   profile->getPlane()->savePlane(fileName);
 
-  delete [] params;
-  delete [] lensParams;
-  for(int i = 0 ; i<numberOfSources;i++)
-    delete [] sourceParams[i];
-
   delete [] sourceParams;
-
   delete profile;
 
 }

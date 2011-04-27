@@ -24,7 +24,7 @@
 #include "libmygl/glellipse.h"
 #include "libmygl/densityprofile.h"
 #include "libmygl/planecreator.h"
-
+#include "libmygl/structs.h"
 
 #include "defines.h"
 #include "structs.h"
@@ -164,7 +164,6 @@ void squarePlane(const char * fileName);
 utils::DRandom * randy;///< Random number Generator.
 Plane<math::Complex> * deflectionPlane;
 int overallParamNumber;
-std::string * parameterArray;
 Double bgColor;
 void drawEllipse(const struct ray_trace_arguments *args,const char * parameters);
 void verbosePrint(const struct ray_trace_arguments *args, const char * string);
