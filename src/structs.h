@@ -18,7 +18,7 @@ typedef struct {
 
 struct ray_trace_arguments {
 
-  std::string lensMassDeflectionPlane, sourceBMPFilename,mainPrefix;
+  std::string lensMassDeflectionPlane, sourceBMPFilename;
   std::string savesourcelocations;
   std::string fileNamePrefix;///< prefix of files created in the simulation
   std::string makeMassDensity;// flag to indicate whether the mass should be made before the lensing.

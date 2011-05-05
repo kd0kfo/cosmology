@@ -19,6 +19,8 @@
 #include "libdnstd/DRandom.h"
 #include "libdnstd/Complex.h"
 #include "libdnstd/StringTokenizer.h"
+#include "libdnstd/XMLParser.h"
+#include "libdnstd/XMLNode.h"
 
 #include "libmygl/plane.h"
 #include "libmygl/glellipse.h"
@@ -60,7 +62,6 @@ MPIData mpi_data;
  */
 template <class T> void buildSource(Plane<T> *, double * sourceParams,T);///< constructs the source plane.
 template <class T> void constructLens(Plane<T> * source, Plane<T> * lens, T valueOfSource, T lensValue);///< constructs the lens plane.
-bool writeSourceInfo(struct ray_trace_arguments *args, double ** sourceParams, int specificSource, int numberOfSources, utils::DRandom * randy, bool useRandom, int numberOfPixels);///< writes the source info(eg location) to a text file.
 
 /**
  * Main start method.
@@ -86,7 +87,8 @@ int super_main(int argc, char** argv);
  * @param numberOfSources.
  * @return bool true if writing was successful.
  */
-bool writeParameters(struct ray_trace_arguments *args, double * params,double * lensParams,double ** sourceParams, int numberOfSources);
+bool writeParameters(const struct ray_trace_arguments *args,
+		     const struct general_parameters& params,const struct lens_parameters& lensParams,const struct source_parameters& sourceParams);
 
 /**
  * The main simulation routine.
@@ -102,7 +104,7 @@ bool writeParameters(struct ray_trace_arguments *args, double * params,double * 
  * @return int zero if successful
  * @throw DavidException Exception thrown upon error (if you're lucky)
  */
-int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens) throw (DavidException);
+int simulation(struct ray_trace_arguments *args,Plane<Double> **lens, Plane<Double> **sources, DensityProfile **massDensity) throw (DavidException);
 
 /**
  * Creates parameters for a lens to be used in the simulation
@@ -111,8 +113,8 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
  * @param specificLens int specific lens to use
  * @return bool true (always, don't ask why)
  */
-bool createLensParams(double * lensParams, int specificLens);///< Sets the lens parameters.
-int simulationSetup(struct ray_trace_arguments *args);
+bool createLensParams(struct lens_parameters *lensParams, int specificLens);
+int run_simulation(struct ray_trace_arguments *args);
 
 /**
  * Fills the argument structure will default data
@@ -141,12 +143,12 @@ std::string * paramParser(const char * fileName);//Size will be set in method. s
  * @param numLensParams Number of Lens parameters.
  * @param numberOfSources Number of Sources.
  */
-void loadParameters(double * params,double * lensParams,double ** sourceParams,int numParams, int numLensParams, int numberOfSources);
+void loadParameters(struct ray_trace_arguments *args,struct general_parameters * params,struct lens_parameters * lensParams,struct source_parameters *sourceParams);
 
 /**
  * Creates a 2 Dimensional Mass Array from lens parameters.
  */
-void createSurfaceMassDensity(const std::string& fileName);
+void createSurfaceMassDensity(const std::string& fileName, struct ray_trace_arguments& args);
 
 /**
  * Returns a std::string containing the current time.

@@ -3,7 +3,7 @@
  */
 #include "ray_trace_ellipse.h"
 
-enum option_keys{ CREATE_MASS = 1,SOURCE_BMP,DEFLECTION_MAP,FORCE_RUN,
+enum option_keys{ SOURCE_BMP = 1,DEFLECTION_MAP,FORCE_RUN,
 		  STOP_RUN, FILE_PREFIX, USE_GRID, RBG_COLOR, XOFFSET, YOFFSET,
 		  SUBTRACT_PLANES, ADD_PLANES, SQUARE_PLANE,
 		  SAVESOURCE_LOC,DRAW_REMOVED_AREA};
@@ -11,7 +11,7 @@ enum option_keys{ CREATE_MASS = 1,SOURCE_BMP,DEFLECTION_MAP,FORCE_RUN,
 static const struct option ray_trace_options[] = 
   {
     {"newlens", required_argument, NULL,'n'},
-    {"createsurfacemassdensity",required_argument,NULL,CREATE_MASS},
+    {"createsurfacemassdensity",required_argument,NULL,'c'},
     {"usesurfacemassdensity",required_argument,NULL,'m'},
     {"sourcebmp",required_argument,NULL,SOURCE_BMP},
     {"deflectionmap",required_argument,NULL,DEFLECTION_MAP},
@@ -51,12 +51,14 @@ void DefaultParameters(struct general_parameters *params)
   params->c = 3*pow(10.0,10.0);//speed of light in cm/s
 }
 
-#ifndef __USE_BOINC__
 int main(int argc, char** argv)
 {
   int retval = 0;
+  time_t start_time = time(NULL),end_time;
+  
+  printf("ray_trace_ellipse started on %s\n",ctime(&start_time));
+ 
   glellipseBounds = NULL;
-  parameterArray = NULL;
   try
     {
 #ifdef USE_MPI
@@ -82,7 +84,7 @@ int main(int argc, char** argv)
   catch(DavidException de)
     {
 #ifdef USE_MPI
-      std::cerr << "Process of Rank " << mpi_data.rank  << "on host " << mpi_data.hostname << std::endl;
+      std::cerr << "Process of Rank " << mpi_data.rank  << " on host " << mpi_data.hostname << std::endl;
 #endif
       std::cerr << "*************" << std::endl << "Program Ended due to " << de.getCause() << std::endl;
       std::cerr << "The following message was provided:" << std::endl;
@@ -95,10 +97,11 @@ int main(int argc, char** argv)
   MPI_Finalize();
 #endif
 
+  end_time = time(NULL);
+  printf("Calculation duration: %f second\n",difftime(end_time,start_time));
+  printf("ray_trace_ellispe ended on %s\n",ctime(&end_time));
   return retval;
 }
-#endif
-//endif boinc
 
 
 
@@ -114,14 +117,11 @@ int super_main(int argc, char** argv)
     glellipseBounds[i] = -1;
 
   int retval = parseArgs(argc,argv,&args);
-  
+  if(args.runAsDaemon)
+    printf("DAEMON PROCESS\n");
+
   if(args.makeMassDensity.size() != 0)
-    {
-      createSurfaceMassDensity(args.makeMassDensity);
-      if(args.offset != NULL)
-	delete [] args.offset;
-      return 0;
-    }
+      createSurfaceMassDensity(args.makeMassDensity,args);
 
   if( retval != -42)
     {
@@ -166,124 +166,52 @@ int super_main(int argc, char** argv)
 int sub_main(struct ray_trace_arguments *args)
 {
   int returnMe = 0;
-
   try{
-    std::string startMessage = "ray_trace_ellipse started";
-    if(args->runAsDaemon)
-      startMessage += " as daemon process.";
-    verbosePrint(args,startMessage);
-    returnMe = simulationSetup(args);
+    returnMe = run_simulation(args);
   }
   catch(DavidException de)
     {
-
-#ifdef __DEBUG__
-      DEBUG_PRINT(std::string("Type: ") + de.getType());
-      DEBUG_PRINT(std::string("Code: ") + Double(de.getCode()).str());
-      DEBUG_PRINT(std::string("Message: "));
-#endif
-
-
-      de.stdOut();
-
-      return de.getCode();
-
+      std::cerr << "Exception Thrown!" << std::endl;
+      std::cerr << "Type: " << de.getType() << std::endl;
+      std::cerr << "Code: " << de.getCode() << std::endl;
+      std::cerr << "Message: " << de.getMessage() << std::endl;
+      returnMe = de.getCode();
     }
-
-  delete [] parameterArray;
-
   return returnMe;
 }
 
-int simulationSetup(struct ray_trace_arguments *args)
+int run_simulation(struct ray_trace_arguments *args)
 {
   using utils::DRandom;
-  DRandom * randy = 0;
+  DRandom * randy = NULL;
 
-  int N,height,width,numberOfSources,numberOfLensVariations;
-
-
-  if(parameterArray == 0)
-    {
-      N = 480;
-      height = N;
-      width = N;
-      numberOfSources = 1;
-      numberOfLensVariations = 1;
-	    
-    }
-  else
-    {
-
-      N = (int) Double(parameterArray[3]).doubleValue();
-      height = N;
-      width = N;
-      numberOfSources = (int) Double(parameterArray[2]).doubleValue();
-      numberOfLensVariations = 1;
-    }
-
-#ifdef USE_MPI
-  utils::mpi_adjust_glellipsebounds(glellipseBounds,N);
-  DEBUG_PRINT("Process " << mpi_data.rank << ": Making plane dim: " << glellipseBounds[0] << ", " << glellipseBounds[1] << ", " << glellipseBounds[2] << ", " << glellipseBounds[3]);
-
-#endif
-
-  Double zeroDouble(0.0);
-  Plane<Double> * lens = new Plane<Double>(width,height, bgColor);
-
-  Plane<Double> * sources = 0;
+  Plane<Double> * lens = NULL;
+  Plane<Double> * sources = NULL;
+  Plane<Double> * lensMassPlane = NULL;
+  Plane<math::Complex> * deflectionPlane = NULL;
 #ifndef __USE_BOINC__
   if(access(args->sourceBMPFilename.c_str(),R_OK) == 0)
     sources = Plane<Double>::bmpToPlane(args->sourceBMPFilename);
 #endif
-  Plane<Double> * lensMassPlane = new Plane<Double>(width,height, zeroDouble);
-  Plane<math::Complex> * deflectionPlane = 0;
+  DensityProfile * massDensity = NULL;
 
-  DensityProfile * massDensity = 0;
-
-  //Run once per source
-  for(int i = 0; i<numberOfSources;i++)
-    {
-      using std::string;
-      verbosePrint(args,string("Sim ") + Double(i+1).str() + string(" of ") + Double(numberOfSources).str() + ": ");
-
-      args->fileNamePrefix = args->mainPrefix + Double((double) i).str();
-      std::string fullLensFilename = args->fileNamePrefix  + "lensedimage.bmp";
-      simulation(args,lens,sources, massDensity, 1,i,3);
+  using std::string;
+  
+  std::string fullLensFilename = args->fileNamePrefix  + "lensedimage.bmp";
+  simulation(args,&lens,&sources, &massDensity);
 
 
 #ifndef __USE_BOINC__
-      lens->draw(fullLensFilename,false,args->gridSpace > 0,args->gridSpace);
+  if(lens != NULL)
+    lens->draw(fullLensFilename,false,args->gridSpace > 0,args->gridSpace);
 		
-      if(sources != NULL)
-	{
-	  std::string fullSourceFilename = args->fileNamePrefix + "sources.bmp";
-	  DEBUG_PRINT("Drawing sources");
-	  DEBUG_PRINT(sources);
-	  sources->draw(fullSourceFilename,false,args->gridSpace > 0,args->gridSpace);
-	}
-#endif
-      DEBUG_PRINT("DELETING");
-      delete lens;
-      DEBUG_PRINT("deleted lens");
-      delete sources;
-      DEBUG_PRINT("delted sources");
-      lens = new Plane<Double>(width,height, bgColor);
-      sources = new Plane<Double>(width,height, bgColor);
-    }
-
-
-  //making a combined image if multiple sources are used.
-  if(numberOfSources > 1)
+  if(sources != NULL)
     {
-      verbosePrint(args,"Combined Sim");
-      args->fileNamePrefix = args->mainPrefix + Double(numberOfSources).str();
-      simulation(args,lens,sources, massDensity, numberOfSources,-1,0);
-#ifndef __USE_BOINC__
-      lens->draw(args->fileNamePrefix+"lensedimage.bmp",false,args->gridSpace < 0,args->gridSpace);
-      sources->draw(args->fileNamePrefix+"sources.bmp",false,args->gridSpace < 0,args->gridSpace);
-#endif
+      std::string fullSourceFilename = args->fileNamePrefix + "sources.bmp";
+      verbosePrint(args,"Drawing sources");
+      sources->draw(fullSourceFilename,false,args->gridSpace > 0,args->gridSpace);
     }
+#endif
 
   delete randy;
   delete lens;
@@ -303,93 +231,107 @@ int simulationSetup(struct ray_trace_arguments *args)
 
 
 
-int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Double> * sources, DensityProfile * massDensity, int numberOfSources, int specificSource, int specificLens) throw (DavidException)
+int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane<Double> **sources_addr, DensityProfile **massDensity_addr) throw (DavidException)
 {
 	
 	
   using namespace std;
   using utils::DRandom;
+  Plane<Double> *lens, *sources;
+  DensityProfile *massDensity;
+  int N = 0;
 	
-  int N = lens->numberOfRows();//Plane is always square
-	
-  if(args == NULL)
+  if(args == NULL || lens_addr == NULL || sources_addr == NULL || massDensity_addr == NULL)
     throw DavidException("simulation: Need arguments. Got null pointer.",DavidException::NULL_POINTER);
+  
+  massDensity = *massDensity_addr;
   args->includeCricalCurveAndCaustic = false;
-#if 0// deprecated??
-  bool useRandom = false;//source placement
-  if(useRandom)
-    randy = new DRandom();
-#endif
 
-  int numberOfObsParameters = 6;
   struct lens_parameters lensParams;
   struct general_parameters params;
-  std::vector<struct source_parameters>sourceParams;
+  struct source_parameters sourceParams;
 
-  if(parameterArray == 0)
+  if(args == NULL || args->parameter_name.size() == 0)
     {
-      createLensParams(&lensParams,specificLens);
-
-      writeSourceInfo(args,sourceParams,specificSource, numberOfSources, randy, args->useRandom, N);
+      createLensParams(&lensParams,0);
+      DefaultParameters(&params);
     }
   else
     {
       verbosePrint(args,"Loading parameters");
-      loadParameters(&params,&lensParams,&sourceParams,numberOfSources);
+      loadParameters(args,&params,&lensParams,&sourceParams);
 
     }
+
+  N = params.ndim;
+  if(*lens_addr == NULL)
+    *lens_addr = new Plane<Double>(N,N,0.0);
+  lens = *lens_addr;
+
+  if(*sources_addr == NULL)
+    *sources_addr = new Plane<Double>(N,N,0.0);
+  sources = *sources_addr;
+
+
+  
+#ifdef USE_MPI
+  utils::mpi_adjust_glellipsebounds(glellipseBounds,N);
+  DEBUG_PRINT("Process " << mpi_data.rank << ": Making plane dim: " << glellipseBounds[0] << ", " << glellipseBounds[1] << ", " << glellipseBounds[2] << ", " << glellipseBounds[3]);
+
+#endif
+
+  // setup planes
   delete massDensity;//No memory leaks here!
 
   verbosePrint(args,"Creating Mass density");
-  massDensity = new DensityProfile(args->lensMassDensity, lensParams, params);
-  GLAlgorithm * gls = new GLAlgorithm[numberOfSources];
+  massDensity = new DensityProfile(&args->lensMassDensity, &lensParams, &params);  *massDensity_addr = massDensity;
+  
+  GLAlgorithm gl;
 
-  for(int i = 0;i<numberOfSources;i++)
+  if(args->runExistingDeflection)
     {
-      if(args->runExistingDeflection)
-	{
-	  // USE EXISTING DEFLECTION PLANE
-	  const std::string& deflectionFilename = args->lensMassDeflectionPlane;
+      // USE EXISTING DEFLECTION PLANE
+      const std::string& deflectionFilename = args->lensMassDeflectionPlane;
 	  
-	  verbosePrint(args,std::string("Parsing Deflection Plane: ")+deflectionFilename);
-	  deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
-	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams.at(0),sources);
-	}
-      if(args->createDeflection)
-	{
+      verbosePrint(args,std::string("Parsing Deflection Plane: ")+deflectionFilename);
+      deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
+      gl = GLAlgorithm(deflectionPlane,&params,&sourceParams,sources);
+    }
+  if(args->createDeflection)
+    {
 
-	  // CREATE NEW DEFLECTION PLANE 
-	  verbosePrint(args,std::string("Creating Deflection Plane: ") + args->lensMassDeflectionPlane);
-	  gls[i] = GLAlgorithm(massDensity,sourceParams.at(0),sources,glellipseBounds,args->offset);
+      // CREATE NEW DEFLECTION PLANE 
+      verbosePrint(args,std::string("Creating Deflection Plane: ") + args->lensMassDeflectionPlane);
+      gl = GLAlgorithm(massDensity,&sourceParams,sources,glellipseBounds,args->offset);
 
 #ifdef USE_MPI
-		  MPI_Comm lens_group;
-		  int has_lens = (gls[i].getDeflectionPlane() != 0) ? 1 : 0;
-		  MPI_Comm_split(MPI_COMM_WORLD,has_lens,mpi_data.rank,&lens_group);
+      MPI_Comm lens_group;
+      int has_lens = (gl.getDeflectionPlane() != 0) ? 1 : 0;
+      MPI_Comm_split(MPI_COMM_WORLD,has_lens,mpi_data.rank,&lens_group);
 #endif
 
-	  if(gls[i].getDeflectionPlane() != 0)
-	    {
+      if(gl.getDeflectionPlane() != 0)
+	{
 #ifdef USE_MPI
-	      utils::mpi_recombine(gls[i],lens_group);
-	      if(mpi_data.rank == utils::MASTER_RANK)
-	    	  gls[i].getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
+	  utils::mpi_recombine(gl,lens_group);
+	  if(mpi_data.rank == utils::MASTER_RANK)
+	    gl.getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
 
 #else
-	      gls[i].getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
+	  gl.getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
 #endif
-	    }
+	}
 #ifdef USE_MPI
-	  MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
 #endif
-	}
-      if(!args->createDeflection && !args->runExistingDeflection)
-	{
-	  verbosePrint(args,"Running based on parameters");
-	  gls[i] = GLAlgorithm(deflectionPlane,params,sourceParams.at(0),sources);
-	}
-		  
     }
+  if(!args->createDeflection && !args->runExistingDeflection)
+    {
+      verbosePrint(args,"Running based on parameters");
+      gl = GLAlgorithm(deflectionPlane,&params,&sourceParams,sources);
+    }
+		  
+    
 
 #ifndef __USE_BOINC__
   verbosePrint(args,"Running Sim");
@@ -424,25 +366,22 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
 	{
 	  for(size_t j = Y0;j<Y;j++)
 	    {
-	      for(size_t k = 0;k<numberOfSources;k++)
+	      try
 		{
-		  try
+		  sourceValue = lens->getValue(i,j) + gl.mapsToSource(i,j);
+		  if(sourceLocations != 0 && args->savesourcelocations.size() != 0)
 		    {
-		      sourceValue = lens->getValue(i,j) + gls[k].mapsToSource(i,j);
-		      if(sourceLocations != 0 && args->savesourcelocations.size() != 0)
-			{
-			  double * loc = gls[k].newLocation(i,j);
-			  math::Complex curr = math::Complex(loc[0],loc[1]);
-			  sourceLocations->setValue(i,j,curr);
-			  delete [] loc;
-			}
-		      lens->setValue(i,j,sourceValue);
+		      double * loc = gl.newLocation(i,j);
+		      math::Complex curr = math::Complex(loc[0],loc[1]);
+		      sourceLocations->setValue(i,j,curr);
+		      delete [] loc;
 		    }
-		  catch(DavidException de)
-		    {
-		      DEBUG_PRINT(de.getMessage());
-		    }
-		}//end for(k...)
+		  lens->setValue(i,j,sourceValue);
+		}
+	      catch(DavidException de)
+		{
+		  DEBUG_PRINT(de.getMessage());
+		}
 	    }
 	  if((i*100/N) >= (percentFinished+5))
 	    {
@@ -471,22 +410,12 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> * lens, Plane<Doub
       verbosePrint(args,"No sim");
     }
 #endif
-
 	
 #ifndef __USE_BOINC__
-  writeParameters(args,params,lensParams,sourceParams,numberOfSources);
+  writeParameters(args,params,lensParams,sourceParams);
 #endif
 
-  delete [] gls;
-  for(int i = 0; i< numberOfSources;i++)
-    delete [] sourceParams[i];
-  delete [] sourceParams;
-
-  gls = 0;
-  params = 0;
-  lensParams = 0;//don't delete here. Contained in massDensity which is kept as a pointer.
-  sourceParams = 0;
-
+  *massDensity_addr = massDensity;
   return 0;
 }
 
@@ -554,194 +483,64 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 }
 
 
-//If a specific sources is wanted specify it in specificSource, else specificSource < 0
-bool writeSourceInfo(struct ray_trace_arguments *args,
-		     double ** sourceParams, 
-		     int specificSource, int numberOfSources, 
-		     utils::DRandom * randy, bool useRandom, 
-		     int numberOfPixels)
-{
-  using namespace std;
-
-  string fullFileName;
-
-  if(args == NULL)
-    throw DavidException("writeSourceInfo: Need arguments. Got null pointer",DavidException::NULL_POINTER);
-
-  fullFileName = args->fileNamePrefix + "sourceinfo.txt";
-
-  std::ofstream sourceLOC(fullFileName.c_str());
-
-  int N = numberOfPixels;
-
-  for(int i = 0;i<numberOfSources;i++)
-    {
-      sourceParams[i] = new double[7];
-				
-      //sourceParams[i][0] x coordinate of center
-      //sourceParams[i][1] y coordinate of center
-      sourceParams[i][2] = 2000;//source redshift
-      sourceParams[i][3] = 10;//semimajor axis length in arcseconds
-      sourceParams[i][4] = 0;//source ellipticity, e=1-b/a
-      sourceParams[i][5] = 0;//orientation of source semimajor axis in degrees
-      sourceParams[i][6] = 255;//Source flux
-				
-		
-      if(args->useRandom)
-	{
-	  throw DavidException("FIX RANDOM SOURCE GENERATOR: SORRY ABOUT THIS :(");
-	  /*
-	    sourceParams[i][0] = N*randy->random()/200;
-	    if((randy->random()/3) % 2 == 0)
-	    sourceParams[i][0] *= -1;
-	    sourceParams[i][1] = N*randy->random()/200;
-	    if((randy->random()/3) % 2 == 0)
-	    sourceParams[i][1] *= -1;
-	    if(sourceLOC.is_open())
-	    sourceLOC << sourceParams[i][0] << ", " << sourceParams[i][1] << std::endl;
-	    /**/
-	}
-      else if(specificSource >= 0)
-	{
-	  switch(specificSource)
-	    {
-	    case 1:
-	      sourceParams[i][0] = 50;//x coordinate of source center;
-	      sourceParams[i][1] = 50;//y coordinate of source center;
-	      break;
-	    case 2:
-	      sourceParams[i][0] = 100;//x coordinate of source center;
-	      sourceParams[i][1] = 100;//y coordinate of source center;
-	      break;
-	    case 3:
-	      sourceParams[i][0] = 150;//x coordinate of source center;
-	      sourceParams[i][1] = 150;//y coordinate of source center;
-	      break;
-	    case 4:
-	      sourceParams[i][0] = 200;//x coordinate of source center;
-	      sourceParams[i][1] = 200;//y coordinate of source center;
-	      break;
-	    case 5:
-	      sourceParams[i][0] = -68;//x coordinate of source center;
-	      sourceParams[i][1] = -150;//y coordinate of source center;
-	      break;
-	    default:
-	      sourceParams[i][0] = 0;//x coordinate of source center;
-	      sourceParams[i][1] = 0;//y coordinate of source center;
-	      break;
-	    }
-	  if(sourceLOC.is_open())
-	    sourceLOC << sourceParams[i][0] << ", " << sourceParams[i][1] << std::endl;
-	}
-      else//For multiple, non-random sources
-	{
-	  switch(i)
-	    {
-	    case 1:
-	      sourceParams[i][0] = 50;//x coordinate of source center;
-	      sourceParams[i][1] = 50;//y coordinate of source center;
-	      break;
-	    case 2:
-	      sourceParams[i][0] = 100;//x coordinate of source center;
-	      sourceParams[i][1] = 100;//y coordinate of source center;
-	      break;
-	    case 3:
-	      sourceParams[i][0] = 150;//x coordinate of source center;
-	      sourceParams[i][1] = 150;//y coordinate of source center;
-	      break;
-	    case 4:
-	      sourceParams[i][0] = 200;//x coordinate of source center;
-	      sourceParams[i][1] = 200;//y coordinate of source center;
-	      break;
-	    case 5:
-	      sourceParams[i][0] = -68;//x coordinate of source center;
-	      sourceParams[i][1] = -150;//y coordinate of source center;
-	      break;
-	    default:
-	      sourceParams[i][0] = 0;//x coordinate of source center;
-	      sourceParams[i][1] = 0;//y coordinate of source center;
-	      break;
-	    }
-	  if(sourceLOC.is_open())
-	    sourceLOC << sourceParams[i][0] << ", " << sourceParams[i][1] << std::endl;
-	}
-    }
-  sourceLOC.close();
-
-  return true;
-}
 
 /**
  * writeParameters writes the parameters to 2 files: "human readable" file and a file which can be parsed by ray_trace
  */
-bool writeParameters(struct ray_trace_arguments *args,
-		     double * params,double * lensParams,double ** sourceParams, 
-		     int numberOfSources)
+bool writeParameters(const struct ray_trace_arguments *args,
+		     const struct general_parameters& params,const struct lens_parameters& lensParams,const struct source_parameters& sourceParams)
 {
+  using namespace std;
+  using namespace utils;
   if(args == NULL)
     throw DavidException("writeParameters: Need arguments. Got null pointer",DavidException::NULL_POINTER);
 
-  std::string fullFileName = args->fileNamePrefix+"human-parameters.txt";
-  std::string fullFileName2 = args->fileNamePrefix+"parameters.txt";
-  std::ofstream outfile(fullFileName.c_str());
-  std::ofstream outfile2(fullFileName2.c_str());
-  using namespace std;
+  static const string fullFileName = args->fileNamePrefix+"human-parameters.txt";
+  static const string fullFileName2 = args->fileNamePrefix+"parameters.txt";
+  ofstream outfile(fullFileName.c_str());
+  XMLParser xmldoc;
+  XMLNode *xml = new XMLNode("parameters");
+  XMLNode *xmlparams = new XMLNode("general_parameters");
+  XMLNode *xmllens = new XMLNode("lens_parameters");
+  ostringstream buff;
+  
+  xml->insertChild(xmlparams);
+  xml->insertChild(xmllens);
 
-  int numParams = 6;
-  int numLensParams = 10;
-	
-  if(outfile.is_open() && outfile2.is_open())
+  if(outfile.is_open())
     {
-
-      outfile2 << numParams << ";number of parameters" << endl;
-      outfile2 << numLensParams <<";number of lens parameters" << endl;
-      outfile2 << numberOfSources <<";Number of Sources" << endl;
-
+      
       outfile << "General Parameters:" << endl;
-      for(int i = 0;i<numParams;i++)
-	{	
-	  switch(i)
-	    {
-	    case 0:
-	      outfile << "Length and Width in pixels: " << params[i] << endl;
-	      outfile2 << params[i] << ";Length and Width in pixels " << endl;
-	      break;
-	    case 1:
-	      outfile << "Arc length per pixel: " << params[i] << endl;
-	      outfile2 << params[i] << ";Arc length per pixel" <<  endl;
-	      break;
-	    case 2:
-	      outfile << "Value of Newton's Constant: " << params[i] << endl;
-	      outfile2 <<  params[i] << ";Value of Newton's Constant" << endl;
-	      break;
-	    case 3:
-	      outfile << "Solar mass: " << params[i] << endl;
-	      outfile2 << params[i] << ";Solar mass" << endl;
-	      break;
-	    case 4:
-	      outfile << "Distance Scale: " << params[i] << endl;
-	      outfile2 << params[i] << ";Distance Scale" << endl;
-	      break;
-	    case 5:
-	      outfile << "Speed of Light" << params[i] << endl;
-	      outfile2 << params[i] << ";Speed of Light" << endl;
-	    default:
-	      break;
-	    }
-	}
+      outfile << "Length and Width in pixels: " << params.ndim << endl;
+      buff.clear();buff << params.ndim;
+      xmlparams->insertChild("ndim",buff.str());
+      outfile << "Arc length per pixel: " << params.arcsec_per_pixel << endl;
+      buff.clear();buff << params.arcsec_per_pixel ;
+      xmlparams->insertChild("arcsec_per_pixel",buff.str());
+      outfile << "Value of Newton's Constant: " << params.G << endl;
+      buff.clear();buff << params.G ;
+      xmlparams->insertChild("G",buff.str());
+      outfile << "Solar mass: " << params.G << endl;
+      buff.clear();buff << params.G ;
+      xmlparams->insertChild("G",buff.str());
+      outfile << "Distance Scale: " << params.distance_scale << endl;
+      buff.clear();buff << params.distance_scale ;
+      xmlparams->insertChild("distance_scale",buff.str());
+      outfile << "Speed of Light" << params.c << endl;
+      buff.clear();buff << params.c ;
+      xmlparams->insertChild("c",buff.str());
       outfile << "Critical Curves included: ";
-      if(args->includeCricalCurveAndCaustic)
+      if(params.showCriticalCurves)
 	{
 	  outfile << "Yes" << endl;
-	  outfile2 << 1 ;
+	  xmlparams->insertChild("c","1");
 	}
       else
 	{
 	  outfile << "No" << endl;
-	  outfile2 << 0 ;
+	  xmlparams->insertChild("c","0");
 	}
       outfile << endl;
-      outfile2 << ";Critical Curves included" << endl;
     }
   else
     return false;
@@ -749,47 +548,30 @@ bool writeParameters(struct ray_trace_arguments *args,
   if(outfile.is_open())
     {
       outfile << "Lens Parameters:" << endl;
-      for(int i = 0;i<numLensParams;i++)
-	{	
-	  switch(i)
-	    {
-	    case 0:
-	      outfile << "x coordinate of lens center: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";x coordinate of lens center"  << endl;
-	      break;
-	    case 1:
-	      outfile << "y coordinate of lens center: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";y coordinate of lens center"  << endl;
-	      break;
-	    case 2:
-	      outfile << "lens redshift or distance: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";lens redshift or distance" << lensParams[i] << endl;
-	      break;
-	    case 5:
-	      outfile << "lens velocity of dispersion: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";lens velocity of dispersion" << lensParams[i] << endl;
-	      break;
-	    case 6:
-	      outfile << "lens mass density (in solar masses per square arcsecond): " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";lens mass density (in solar masses per square arcsecond)" << endl;
-	      break;
-	    case 7:
-	      outfile << "Shear: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";Shear" << endl;
-	      break;
-	    case 8:
-	      outfile << "Semi-major axis length: " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";Semi-major axis length" << endl;
-	      break;
-	    case 9:
-	      outfile << "Eccentricity(e=1-b/a): " << lensParams[i] << endl;
-	      outfile2 << lensParams[i] << ";Eccentricity(e=1-b/a)" << endl;
-	      break;
-	    default:
-	      outfile2 << "42;useless array parameter PLEASE use me next" << endl;
-	      break;
-	    }
-	}
+      outfile << "x coordinate of lens center: " << lensParams.xcenter << endl;
+      buff.clear();buff << lensParams.xcenter ;
+      xmllens->insertChild("xcenter",buff.str());
+      outfile << "y coordinate of lens center: " << lensParams.ycenter << endl;
+      buff.clear();buff << lensParams.ycenter ;
+      xmllens->insertChild("ycenter",buff.str());
+      outfile << "lens redshift or distance: " << lensParams.redshift << endl;
+      buff.clear();buff << lensParams.redshift ;
+      xmllens->insertChild("redshift",buff.str());
+      outfile << "lens velocity of dispersion: " << lensParams.velocity_dispersion << endl;
+      buff.clear();buff << lensParams.velocity_dispersion ;
+      xmllens->insertChild("velocity_dispersion",buff.str());
+      outfile << "mass density (optional): " << lensParams.mass_density << endl;
+      buff.clear();buff << lensParams.mass_density;
+      xmllens->insertChild("mass_density",buff.str());
+      outfile << "Shear: " << lensParams.shear << endl;
+      buff.clear();buff << lensParams.shear;
+      xmllens->insertChild("shear",buff.str());
+      outfile << "Semi-major axis length: " << lensParams.semimajor_length << endl;
+      buff.clear();buff << lensParams.semimajor_length;
+      xmllens->insertChild("semimajor_length",buff.str());
+      outfile << "Eccentricity(e=1-b/a): " << lensParams.eccentricity << endl;
+      buff.clear();buff << lensParams.eccentricity;
+      xmllens->insertChild("eccentricity",buff.str());
       outfile << endl;
     }
   else
@@ -797,48 +579,30 @@ bool writeParameters(struct ray_trace_arguments *args,
 
   if(outfile.is_open())
     {
+      XMLNode *xmlsourceParams = new XMLNode("source_parameters");
       outfile << "Source Parameters:" << endl;
-      for(int sourceNumber = 0;sourceNumber<numberOfSources;sourceNumber++)
-	{	
-	  outfile << "Source " << sourceNumber + 1 << ": " << endl;
-	  for(int i = 0;i<7;i++)
-	    {
-	      switch(i)
-		{
-		case 0:
-		  outfile << "x coordinate of source center: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";x coordinate of source center" << endl;
-		  break;
-		case 1:
-		  outfile << "y coordinate of source center: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";y coordinate of source center" << endl;
-		  break;
-		case 2:
-		  outfile << "source redshift or distance: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";source redshift or distance" << endl;
-		  break;
-		case 3:
-		  outfile << "semimajor axis length in arcseconds: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";semimajor axis length in arcseconds" << endl;
-		  break;
-		case 4:
-		  outfile << "source eccentricity: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";source eccentricity" << endl;
-		  break;
-		case 5:
-		  outfile << "orientation of source semimajor axis in degrees: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";orientation of source semimajor axis in degrees" << endl;
-		  break;
-		case 6:
-		  outfile << "Source flux: " << sourceParams[sourceNumber][i] << endl;
-		  outfile2 << sourceParams[sourceNumber][i] << ";Source flux" << endl;
-		  break;
-		default:
-		  break;
-		}
-	    }
-	  outfile << endl;
-	}
+      xml->insertChild(xmlsourceParams);
+      outfile << "x coordinate of source center: " << sourceParams.xcenter << endl;
+      buff.clear();buff << sourceParams.xcenter;
+      xmlsourceParams->insertChild("xcenter",buff.str());
+      outfile << "y coordinate of source center: " << sourceParams.ycenter << endl;
+      buff.clear();buff << sourceParams.ycenter;
+      xmlsourceParams->insertChild("ycenter",buff.str());
+      outfile << "source redshift or distance: " << sourceParams.redshift << endl;
+      buff.clear();buff << sourceParams.redshift;
+      xmlsourceParams->insertChild("redshift",buff.str());
+      outfile << "semimajor axis length in arcseconds: " << sourceParams.semimajor_length << endl;
+      buff.clear();buff << sourceParams.semimajor_length;
+      xmlsourceParams->insertChild("semimajor_length",buff.str());
+      outfile << "source eccentricity: " << sourceParams.eccentricity << endl;
+      buff.clear();buff << sourceParams.eccentricity;
+      xmlsourceParams->insertChild("eccentricity",buff.str());
+      outfile << "orientation of source semimajor axis in radians: " << sourceParams.orientation << endl;
+      buff.clear();buff << sourceParams.orientation;
+      xmlsourceParams->insertChild("orientation",buff.str());
+      outfile << "Source flux: " << sourceParams.flux << endl;
+      buff.clear();buff << sourceParams.flux;
+      xmlsourceParams->insertChild("flux",buff.str());
       outfile << endl;
     }
   else
@@ -846,24 +610,33 @@ bool writeParameters(struct ray_trace_arguments *args,
 
   outfile.close();
 
+  xmldoc.setHead(xml);
+  try{
+    xmldoc.write(fullFileName2);
+  }
+  catch(DavidException de)
+    {
+      de.stdErr();
+      return false;
+    }
+
+  //xmlparser will delete the nodes...
   return true;
 
 }
 
 
-bool createLensParams(double * lensParams, int specificLens)
+bool createLensParams(struct lens_parameters *lensParams, int specificLens)
 {
-  lensParams[0] = 0;//x coordinate of lens center
-  lensParams[1] = 0;//y coordinate of lens center
-  lensParams[2] = 1000;//lens distance in Mpc (typically 1000)
-  lensParams[3] = 600;//lens velocity of dispersion
-  lensParams[4] = 2.2*pow(10.0,7.0);//dispersion velocity in glnonsingular in cm/s
-  lensParams[5] = 2.2*pow(10.0,7.0);//dispersion velocity in glSIS in cm/s
-  lensParams[6] = pow((double) 10, (double) 16); //in Solar Masses, density if applicable, originally 10^12
-  //lensParams[6] = 0.000285883;//Saturn in solar masses
-  lensParams[7] = 0;//Shear in glSISwithShear
-  lensParams[8] = .38;//a, semi-major axis length of lens, in arcseconds
-  lensParams[9] = 0;//e, ellipticity e= 1-b/a, b is the semi-minor axis length
+  // currently, there is only 1 lens type. specificLens is ignored
+  lensParams->xcenter = 0;//x coordinate of lens center
+  lensParams->ycenter = 0;//y coordinate of lens center
+  lensParams->redshift = 4.2;//lens distance in Mpc (typically 1000)
+  lensParams->velocity_dispersion= 600;//lens velocity of dispersion
+  lensParams->mass_density = 1e16; //in Solar Masses, density if applicable, originally 10^12
+  lensParams->shear = 0;//Shear in glSISwithShear
+  lensParams->semimajor_length = .38;//a, semi-major axis length of lens, in arcseconds
+  lensParams->eccentricity = 0;//e, ellipticity e= 1-b/a, b is the semi-minor axis length
 
   return true;
 }
@@ -880,7 +653,7 @@ void default_arguments(struct ray_trace_arguments *args)
   args->offset = NULL;
   args->lensMassDensity = NULL;
   args->gridSpace = -1000;
-  args->mainPrefix = "run-";
+  args->fileNamePrefix = "run-";
   args->sourceBMPFilename = "source.bmp";
   args->lensMassDeflectionPlane = "lens";
   args->drawRemovedArea = false;
@@ -978,7 +751,7 @@ void parse_bounds(char *csv_bounds)
 
 int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 {
-  static const char short_opts[] = "dg:hl:m:n:p:tv";
+  static const char short_opts[] = "c:dg:hl:m:n:p:tv";
   int option_index = 0, c;
   void print_help();
 
@@ -1019,7 +792,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	    break;
 	  }
 	case FILE_PREFIX:
-	  args->mainPrefix = optarg;
+	  args->fileNamePrefix = optarg;
 	  break;
 	case 'l':case DEFLECTION_MAP:
 	  args->lensMassDeflectionPlane = optarg;
@@ -1039,7 +812,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	case 'p':
 	  args->parameter_name = optarg;
 	  break;
-	case CREATE_MASS:
+	case 'c':
 	  args->makeMassDensity = optarg;
 	  break;
 	case 'm':
@@ -1069,6 +842,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  return 0;
 	case 'v':
 	  args->verbose = true;
+	  break;
 	case 'h':
 	default:
 	  print_help();
@@ -1237,6 +1011,8 @@ void loadGeneralParameters(struct general_parameters * params, const utils::XMLN
 	params->distance_scale = val;
       else if(name == "showcriticalcurves")
 	params->showCriticalCurves;
+      else if(name == "c")
+	params->c = val;
       else
 	std::cerr << "WARNING - Unknown General Parameter: " << name << std::endl;
     }
@@ -1284,12 +1060,12 @@ void loadLensParameters(struct lens_parameters * params, const utils::XMLNode *n
     }
 }
 
-struct source_parameters readGeneralParameters(const XMLNode *node)
+struct source_parameters readSourceParameters(const utils::XMLNode *node)
 {
   utils::XMLNode *curr;
 
   if(node == NULL)
-    return;
+    throw DavidException("readGeneralParameters: NULL POINTER provided for the XML data. Could not load paramters.",DavidException::NULL_POINTER);
 
   struct source_parameters params;
   std::istringstream buff;
@@ -1316,6 +1092,8 @@ struct source_parameters readGeneralParameters(const XMLNode *node)
 	params.semimajor_length = val;
       else if(name == "eccentricity")
 	params.eccentricity = val;
+      else if(name == "orientation")
+	params.orientation = val;
       else if(name == "flux")
 	params.flux = val;
       else
@@ -1325,38 +1103,41 @@ struct source_parameters readGeneralParameters(const XMLNode *node)
 }
 
 
-void loadParameters(struct ray_trace_arguments *args,struct general_parameters * params,struct lens_parameters * lensParams,std::vector<struct source_parameters> *sourceParams)
+void loadParameters(struct ray_trace_arguments *args,struct general_parameters * params,struct lens_parameters * lensParams,struct source_parameters *sourceParams)
 {
   using namespace utils;
 
   if(args == NULL || params == NULL || lensParams == NULL || sourceParams == NULL)
- 
+    {
+      std::cerr << "WARNING - Null pointer was provided to loadParameters. Therefore, no parameters could be loaded." << std::endl;
+      return;
+    }
     XMLParser parser;
   const XMLNode *curr;
   parser.parse(args->parameter_name);
-  for(curr = parser->head;curr != NULL;curr = curr->siblings)
+  for(curr = parser.getHead()->children;curr != NULL;curr = curr->siblings)
     {
-      if(curr->getName() == "general")
-	loadGeneralParameters(curr,params);
-      else if(curr->getName() == "lens")
-	loadLensParameters(curr,lensParams);
-      else if(curr->getName() == "source")
-	sourceParams->push_back(readSouParameters(curr));
+      if(curr->getName().find("general") != std::string::npos)
+	loadGeneralParameters(params,curr);
+      else if(curr->getName().find("lens") != std::string::npos)
+	loadLensParameters(lensParams,curr);
+      else if(curr->getName().find("source") != std::string::npos)
+	*sourceParams = readSourceParameters(curr);
       else
 	throw DavidException("loadParameters: Invalid parameter tag: " + curr->getName(),DavidException::FORMAT_ERROR_CODE);
     }
   
 
   // Default values of glellipseBounds if not set
-  if(glellipseBounds = NULL)
+  if(glellipseBounds == NULL)
     {
       glellipseBounds = new int[4];
       memset(glellipseBounds,-1,4);
     }
   if(glellipseBounds[1] < 0)
-    glellipseBounds[1] = (int)floor(params[0]);
+    glellipseBounds[1] = (int)floor(params->ndim);
   if(glellipseBounds[3] < 0)
-    glellipseBounds[3] = (int)floor(params[0]);
+    glellipseBounds[3] = (int)floor(params->ndim);
   if(glellipseBounds[0] < 0)
     glellipseBounds[0] = 0;
   if(glellipseBounds[2] < 0)
@@ -1412,29 +1193,22 @@ void drawEllipse(const struct ray_trace_arguments *args, const char * parameters
 
 }
 
-void createSurfaceMassDensity(const std::string& fileName)
+void createSurfaceMassDensity(const std::string& fileName, struct ray_trace_arguments& args)
 {
-  if(parameterArray==NULL)
-    throw DavidException("createSurfaceMassDensity: Cannot create a mass density map without paramters.",DavidException::NULL_POINTER);
-
   int numberOfSources = 1;
-  //double * params = new double[6];
-  //double * lensParams = new double[10];
-  //double ** sourceParams = new double*[numberOfSources];
   struct general_parameters params;
   struct lens_parameters lensParams;
-  struct source_parameters *sourceParams = new struct source_parameter[numberOfSources];
-  loadParameters(&params,&lensParams,sourceParams,numberOfSources);
+  struct source_parameters sourceParams;
+  loadParameters(&args,&params,&lensParams,&sourceParams);
   
-  Plane<Double> * dummy = new Plane<Double>(params.ndim,params.ndim,42.0);
-  DensityProfile * profile = new DensityProfile(dummy,lensParams,params);
+  Plane<Double> * dummy = NULL;
+  DensityProfile * profile = new DensityProfile(&dummy,&lensParams,&params);
 
   profile->drawPlane();
   profile->getPlane()->savePlane(fileName);
 
-  delete [] sourceParams;
   delete profile;
-
+  delete dummy;
 }
 
 std::string getTime()
