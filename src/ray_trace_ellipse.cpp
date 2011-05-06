@@ -1,6 +1,8 @@
 /**
  * 
- * This file is part of ray_trace_ellipse
+ * This file is part of ray_trace_ellipse, a program which calculates
+ * gravitational lensing light deflection angles and ray traces
+ * background images.
  *
  * Copyright 2007, 2010 David Coss, PhD
  *

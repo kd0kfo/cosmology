@@ -1,6 +1,8 @@
 /**
  * 
- * This file is part of ray_trace_ellipse
+ * This file is part of ray_trace_ellipse, a program which calculates
+ * gravitational lensing light deflection angles and ray traces
+ * background images.
  *
  * Copyright 2007, 2010 David Coss, PhD
  *
@@ -64,8 +66,9 @@ static const struct option ray_trace_options[] =
 
 
 /** \mainpage Documentation of the Main Executables.
- * Created By David Coss, 2007
+ * Copyright 2007, 2010 David Coss, PhD
  */
+
 template <class T> void buildSource(Plane<T> *, double * sourceParams,T);///< constructs the source plane.
 template <class T> void constructLens(Plane<T> * source, Plane<T> * lens, T valueOfSource, T lensValue);///< constructs the lens plane.
 
@@ -87,11 +90,10 @@ int super_main(int argc, char** argv);
  * Writes all of the parameters to two text files: 
  * one that the simulator can re-read and one 
  * that is better formatted for people.
+ *
  * @param params General Parameters.
  * @param lensParams Lens Parameters.
  * @param sourceParams Array of Parameters for each source
- * @param numberOfSources.
- * @return bool true if writing was successful.
  */
 bool writeParameters(const struct ray_trace_arguments *args,
 		     const struct general_parameters& params,const struct lens_parameters& lensParams,const struct source_parameters& sourceParams);
@@ -103,11 +105,6 @@ bool writeParameters(const struct ray_trace_arguments *args,
  * @param lens Plane<Double> representing the lens plane
  * @param sources Plane<Double> containing the source background images
  * @param massDensity DensityProfile containing the 2D mass density
- * @param numberOfSources int number of source planes to be lensed
- * @param specificSource int source to be run if only one source is used
- * @param specificLens int specific lens to be used if only one is used
- * @param parameter1 int option parameter (as of now, not used give it anything)
- * @return int zero if successful
  * @throw DavidException Exception thrown upon error (if you're lucky)
  */
 int simulation(struct ray_trace_arguments *args,Plane<Double> **lens, Plane<Double> **sources, DensityProfile **massDensity) throw (DavidException);
@@ -117,7 +114,6 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens, Plane<Doub
  *
  * @param lensParams double array of parameters to use in the simulation
  * @param specificLens int specific lens to use
- * @return bool true (always, don't ask why)
  */
 bool createLensParams(struct lens_parameters *lensParams, int specificLens);
 int run_simulation(struct ray_trace_arguments *args);
@@ -133,21 +129,11 @@ void default_arguments(struct ray_trace_arguments *args);
 int parseArgs(int argc, char** argv,struct ray_trace_arguments *args);
 
 /**
- * Parses the Parameter std::string Array.
- * @param filename
- * @return std::string*
- * @see loadParameters(double * params,double * lensParams,double ** sourceParams,int numParams, int numLensParams, int numberOfSources)
- */
-std::string * paramParser(const char * fileName);//Size will be set in method. size is the size of the std::string vector
-
-/**
  * Reads the Parameters from the Parameters file.
- * @param array of general parameters.
+ *
+ * @param params general parameters.
  * @param lensParams Lens parameters.
  * @param sourceParams Array of Parameters for each Source.
- * @param numParams Number of General Lens parameters.
- * @param numLensParams Number of Lens parameters.
- * @param numberOfSources Number of Sources.
  */
 void loadParameters(struct ray_trace_arguments *args,struct general_parameters * params,struct lens_parameters * lensParams,struct source_parameters *sourceParams);
 

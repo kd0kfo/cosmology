@@ -1,35 +1,44 @@
+/**
+ * 
+ * This file is part of makecluster, a program that creates a mass
+ * distribution data structure (2-D).
+ *
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * makecluster is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * makecluster is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with makecluster.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef CREATE_CLUSTER_CPP
 #define CREATE_CLUSTER_CPP
 
-#include <math.h>
-#include <time.h>
-#include <iostream>
-#include <fstream>
-
-#include "libdnstd/Double.h"
-#include "libdnstd/DRandom.h"
-#include "libdnstd/DavidException.h"
-
-#include "libmygl/Cosmology.h"
-
-#include "defines.h"
-
-/**
- * Create a cluster based on a given distribution
- * Author: David Coss
- * Copyright 2009
- */
 class Create_Cluster
 {
 
  public:
   Create_Cluster();
   ~Create_Cluster();
+  
+  enum DISTRIBUTION_TYPES{NFW/* NFW ellipse (triaxial)*/,
+			  NSIS/*Non singular isothermal sphere*/,
+			  UNIFORM_ELLIPSE/* Uniform ellipse*/
+  };
 
   /*
    * Generates a new point based on a distribution
    * Positions are in arcseconds.
+   * 
    * @param maxDistance int optional max size. Default = 500
+   * @param parameters double array of numbers used to build the distribution
    * @return Double 3-D position
    */
   Double calculatePosition(const int clusterType,double const * const parameters)const;
@@ -44,13 +53,12 @@ class Create_Cluster
   long resetRandom(long seed) throw (DavidException);
 
   
-  static const int NFW = 1;///< NFW ellipse (triaxial)
-  static const int NSIS = 2;///<Non singular isothermal sphere
-  static const int UNIFORM_ELLIPSE = 3;///<Uniform ellipse
-  
 
  private:
   /**
+   * Parameterizes distance used to build NFW
+   *
+   * Array variables:
    * r_ell = position[0];
    * phi = position[1];
    * theta = position[2];
@@ -61,6 +69,8 @@ class Create_Cluster
   double getNFWDistance(double const * const position, double const * const parameters)const;
   
   /**
+   * Parameterizes distance used to build NSIS
+   *
    * position = position[0];
    * coreRadius = parameters[0];
    * maximumDistance = parameters[1];
@@ -68,7 +78,8 @@ class Create_Cluster
   double getNSISDistance(double const * const position, double const * const parameters)const;
 
   /**
-   * Uniform Ellipse
+   * Parameterizes distance used to build Uniform Ellipse
+   *
    * position[0] = random distance as a fraction of the elliptical boundary at the random angles, position[1] and position[2].
    * 0 <= position[1] <= 2*pi;
    * 0 <= position[2] <= pi;
@@ -79,7 +90,7 @@ class Create_Cluster
    */
   Double getUniformEllipseDistance(double const * const position,double const * const parameters)const;
 
-  utils::DRandom * randy;
+  utils::DRandom * randy;// Random number generator.
 
 };
 

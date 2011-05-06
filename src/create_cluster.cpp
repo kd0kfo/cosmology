@@ -1,3 +1,37 @@
+/**
+ * 
+ * This file is part of makecluster, a program that creates a mass
+ * distribution data structure (2-D).
+ *
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * makecluster is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * makecluster is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with makecluster.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <math.h>
+#include <time.h>
+#include <iostream>
+#include <fstream>
+
+#include "libdnstd/Double.h"
+#include "libdnstd/DRandom.h"
+#include "libdnstd/DavidException.h"
+
+#include "libmygl/Cosmology.h"
+
+#include "defines.h"
+
 #include "create_cluster.h"
 
 Create_Cluster::Create_Cluster()
@@ -110,9 +144,6 @@ double Create_Cluster::getNSISDistance(double const * const position, double con
   coreRadius = parameters[0];
   maximumDistance = parameters[1];
   coeff = log(maximumDistance+sqrt(maximumDistance*maximumDistance+coreRadius*coreRadius))-log(coreRadius);
-
-  //double returnMe = -1*abs(coreRadius)*(exp(-r*(log(maximumDistance+sqrt(maximumDistance*maximumDistance+coreRadius*coreRadius))-log(abs(coreRadius))))-exp(r*(log(maximumDistance+sqrt(maximumDistance*maximumDistance+coreRadius*coreRadius))-log(abs(coreRadius)))));
-  //returnMe /= 2;
 
   return coreRadius*sinh(r*coeff);
 }
