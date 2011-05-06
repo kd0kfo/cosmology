@@ -1,60 +1,66 @@
+/**
+ * 
+ * This file is part of ray_trace_ellipse
+ *
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * ray_trace_elipse is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * ray_trace_elipse is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with ray_trace_elipse.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef RAY_TRACE_CPP
 #define RAY_TRACE_CPP
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <iostream>
-#include <fstream>
-#include <cmath>
 #include <getopt.h>
 
-#ifdef _WIN32
-#include <time.h>
-#endif
-
-#include "libdnstd/utils.h"
-#include "libdnstd/Double.h"
 #include "libdnstd/DRandom.h"
-#include "libdnstd/Complex.h"
-#include "libdnstd/StringTokenizer.h"
-#include "libdnstd/XMLParser.h"
-#include "libdnstd/XMLNode.h"
 
-#include "libmygl/plane.h"
-#include "libmygl/glellipse.h"
 #include "libmygl/densityprofile.h"
-#include "libmygl/planecreator.h"
-#include "libmygl/structs.h"
-
-#include "defines.h"
-#include "structs.h"
+#include "libmygl/plane.h"
 
 
-#ifndef _WIN32
-#include <cstdio>
-#include <cctype>
-#include <ctime>
-#include <cstring>
-#include <cstdlib>
-#include <csignal>
-#include <unistd.h>
-#endif
+enum option_keys{ SOURCE_BMP = 1,DEFLECTION_MAP,FORCE_RUN,
+		  STOP_RUN, FILE_PREFIX, USE_GRID, RBG_COLOR, XOFFSET, YOFFSET,
+		  SUBTRACT_PLANES, ADD_PLANES, SQUARE_PLANE,
+		  SAVESOURCE_LOC,DRAW_REMOVED_AREA};
 
-#ifndef __USE_BOINC__
-#include "mydaemon.cpp"
-#define DAEMON_NAME "ray_trace_ellipse"
-#endif
-
-
-
-#ifdef USE_MPI
-#include "mpi_utils.h"
-
-MPIData mpi_data;
-
-#endif
+static const struct option ray_trace_options[] = 
+  {
+    {"newlens", required_argument, NULL,'n'},
+    {"createsurfacemassdensity",required_argument,NULL,'c'},
+    {"usesurfacemassdensity",required_argument,NULL,'m'},
+    {"sourcebmp",required_argument,NULL,SOURCE_BMP},
+    {"deflectionmap",required_argument,NULL,DEFLECTION_MAP},
+    {"lens",required_argument,NULL,'l'},
+    {"forcerun",no_argument,NULL,FORCE_RUN},
+    {"stoprun",no_argument,NULL,STOP_RUN},
+    {"prefix",required_argument,NULL,FILE_PREFIX},
+    {"usegrid",required_argument,NULL,USE_GRID},
+    {"bgcolor",required_argument,NULL,RBG_COLOR},
+    {"xoffset",required_argument,NULL,XOFFSET},
+    {"yoffset",required_argument,NULL,YOFFSET},
+    {"parameters",required_argument,NULL,'p'},
+    {"glellipsebounds",required_argument,NULL,'g'},
+    {"timestamp",no_argument,NULL,'t'},
+    {"addplanes",required_argument,NULL,ADD_PLANES},
+    {"subtractplanes",required_argument,NULL,SUBTRACT_PLANES},
+    {"squareplane",required_argument,NULL,SQUARE_PLANE},
+    {"savesourcelocations",no_argument,NULL,SAVESOURCE_LOC},
+    {"daemon",no_argument,NULL,'d'},
+    {"drawremovedarea",no_argument,NULL,DRAW_REMOVED_AREA},
+    {"help",no_argument,NULL,'h'},
+    {"verbose",no_argument,NULL,'v'},
+    {0,0,0,0}
+  };
 
 
 /** \mainpage Documentation of the Main Executables.
@@ -168,8 +174,6 @@ Plane<math::Complex> * deflectionPlane;
 int overallParamNumber;
 Double bgColor;
 void drawEllipse(const struct ray_trace_arguments *args,const char * parameters);
-void verbosePrint(const struct ray_trace_arguments *args, const char * string);
-void verbosePrint(const struct ray_trace_arguments *args, std::string string){return verbosePrint(args,string.c_str());}
-void verbosePrint(const struct ray_trace_arguments *args, double val){return verbosePrint(args,Double(val).str().c_str());}
+void verbosePrint(const struct ray_trace_arguments *args, const char * frmt, ...);
 int * glellipseBounds;
 #endif
