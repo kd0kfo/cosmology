@@ -34,6 +34,10 @@
 #include "symrec.h"
 #include "functions.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
   static const char* PROMPT_STRING = ">";
   class DavidException;
   int yylex (void);
@@ -49,6 +53,7 @@
   void handle_plane(symrec *rec,double& i, double& j, struct calcval);
   struct calcval ans;
   void print_complex(struct calcval);
+  void print_copyright();
 
  %}
 %union {
@@ -57,7 +62,7 @@
 }
 %token <val>  NUM        /* Simple double precision number.  */
 %token <tptr> VAR FNCT 
-%token IMAG EXIT
+%token IMAG EXIT COPYRIGHT
 %type  <val>  exp
 %left ANS
 %right '='
@@ -73,6 +78,7 @@ input:   input stmt
      
      stmt:
                ';'
+	       | COPYRIGHT ';' {print_copyright();}
                | EXIT ';' {YYACCEPT;}
                | exp ';'   { print_complex($1); ans = $1;}
                | error ';' { yyerrok;  printf("%s",PROMPT_STRING);         }
@@ -274,10 +280,11 @@ symrec *
      int
      main (void)
      {
+       print_copyright();
        symrec *funct;
        init_table ();
        printf("\n");
-       printf("Welcome! To exit, type quit.\nAll statements must end with a semicolon.\n%s",PROMPT_STRING);
+       printf("Welcome! To exit, type quit.\nALL statements must end with a semicolon.\n%s",PROMPT_STRING);
        yyparse();
        printf("Good bye.\n");
        return 0;
@@ -422,4 +429,10 @@ void do_ls(const char *path)
 		printf ("Couldn't open the directory\n");
 
 	
+}
+
+void print_copyright()
+{
+	printf("physcalc v%s  Copyright (C) 2010 David Coss, PhD\n",PACKAGE_VERSION);
+	printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYRING file distributed with this program.\n");
 }
