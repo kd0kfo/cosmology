@@ -34,7 +34,6 @@
 #endif
 
 #include "libdnstd/utils.h"
-#include "libdnstd/Double.h"
 #include "libdnstd/Complex.h"
 #include "libdnstd/StringTokenizer.h"
 #include "libdnstd/XMLParser.h"
@@ -44,7 +43,6 @@
 #include "libmygl/planecreator.h"
 #include "libmygl/structs.h"
 
-#include "defines.h"
 #include "structs.h"
 
 
@@ -57,13 +55,6 @@
 #include <csignal>
 #include <unistd.h>
 #endif
-
-#ifndef __USE_BOINC__
-#include "mydaemon.cpp"
-#define DAEMON_NAME "ray_trace_ellipse"
-#endif
-
-
 
 #ifdef USE_MPI
 #include "mpi_utils.h"
@@ -170,25 +161,6 @@ int super_main(int argc, char** argv)
 
   int returnValue = 0;
 	
-#ifndef __USE_BOINC__	
-  //Running as daemon if you get this far
-  // Initialize the logging interface 
-  openlog( DAEMON_NAME, LOG_PID, LOG_LOCAL5 );
-  syslog( LOG_INFO, "starting" );
-	
-  // One may wish to process command line arguments here 
-  // Daemonize 
-  daemonize( "/var/lock/subsys/" DAEMON_NAME );
-	
-  // Now we are a daemon -- do the work for which we were paid 
-	
-  returnValue = sub_main(&args);
-	
-  // Finish up 
-  syslog( LOG_NOTICE, "terminated" );
-  closelog();
-#endif
-
   if(args.offset != NULL)
     delete [] args.offset;
   

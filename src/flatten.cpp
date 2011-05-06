@@ -1,17 +1,47 @@
 /**
- * Created By David Coss, 2007
+ * 
+ * This file is part of flatten, a program that takes a 3-D particle
+ * distribution and produces a two-dimentional projection.
+ *
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * flatten is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * flatten is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with flatten.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "flatten.h"
+#include <iostream>
+#include <fstream>
+#include <time.h>
+#include <cmath>
+#include <deque>
 
-Flatten::Flatten(bool _runAsDaemon,
-	    bool _useTimeStamp,
+#include "libdnstd/DavidException.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/Double.h"
+#include "libdnstd/utils.h"
+
+#include "libmygl/planecreator.h"
+
+#ifndef __USE_BOINC__
+#include "libmygl/EasyBMP/EasyBMP.h"
+#endif
+
+Flatten::Flatten(bool _useTimeStamp,
 	    bool _scaleImage,
 	    bool _drawImage,
 	    int _lineOfSight,
 	    int _timeInSeconds)
 {
-  runAsDaemon = _runAsDaemon;
   useTimeStamp = _useTimeStamp;
   scaleImage = _scaleImage;
   drawImage = _drawImage;
@@ -67,26 +97,14 @@ int Flatten::parseArgs(int argc, char** argv)
 		    
 		    double * bounds = findBounds(fileName.c_str(),searchColumn.doubleValue(),startingPoint.doubleValue());
 
-		    verbosePrint(std::string("Maximum Value is ")+Double(bounds[2]).str()+ std::string(" located at line ") + Double( bounds[0]).str());
-		    verbosePrint(std::string("Minimum Value is ")+Double(bounds[3]).str()+ std::string(" located at line ") + Double( bounds[1]).str());
+		    printf("Maximum Value is %g  located at line %d\n",bounds[2],(size_t)bounds[0]);
+		    printf("Minimum Value is %g  located at line %d\n",bounds[3],(size_t)bounds[1]);
 		    delete [] bounds;
 		    return 0;
 		  }		    
-		else if(bean == "--daemon")
-		  {
-		    runAsDaemon = true;
-		  }
-		else if(bean == "--timestamp")
-		  {
-		    useTimeStamp = true;
-		  }
 		else if(bean == "--scaledimage")
 		  {
 		    scaleImage = true;
-		  }
-		else if(bean == "--daemon")
-		  {
-		    runAsDaemon = true;
 		  }
 		else if(bean == "--drawimage")
 		  {
@@ -118,53 +136,32 @@ int Flatten::parseArgs(int argc, char** argv)
 
 void Flatten::stdout_help()
 {
-  #ifndef __USE_BOINC__
-			verbosePrint("Options are:");
-			verbosePrint("--createsurfacemassdensity <input> <majoraxislength> <2dplanename>");
-			verbosePrint("Creates 2-D massdensity (double values) based on the 3-D box of particles <input>. <majoraxislength> represents the number of pixels in the longer of x and y. Then the cluster is then written as an ascii data <outLENS>.");
-			verbosePrint("--findbounds <filename> <column> <startingline>");
-			verbosePrint("Gives the Maximum and minimum values and the lines they are at. Note: Counting is ZERO INDEX");
-			verbosePrint("--timeevolve <time>");
-			verbosePrint("Evolves the cluster data by the given number of years, based on the cluster particle velocities");
-			verbosePrint("--timestamp");
-			verbosePrint("Places a timestamp at the beginning of every STDOUT message.");
-			verbosePrint("--lineofsight");
-			verbosePrint("Sets the line of sight. X = 0, Y = 1, Z = 2 (default)");
-			verbosePrint("--unit <unit factor>");
-			verbosePrint("Multiplies results by <unit factor>");
-			verbosePrint("--daemon");
-			verbosePrint("Runs the process as a daemon");
-
-#endif //__USE_BOINC__
-
-}
-
-void Flatten::verbosePrint(const std::string bean)
-{
-#if __VERBOSE__
-  std::string printString = bean;
-  std::string timeMe = getTime();
-  if(useTimeStamp || runAsDaemon)
-    printString = timeMe.substr(0,timeMe.length() - 1) + std::string(": ") + printString;
-
-  std::cout << printString << std::endl;
-#endif
+  printf("Options are:\n");
+  printf("--createsurfacemassdensity <input> <majoraxislength> <2dplanename>\n");
+  printf("Creates 2-D massdensity (double values) based on the 3-D box of particles <input>. <majoraxislength> represents the number of pixels in the longer of x and y. Then the cluster is then written as an ascii data <outLENS>.\n");
+  printf("--findbounds <filename> <column> <startingline>\n");
+  printf("Gives the Maximum and minimum values and the lines they are at. Note: Counting is ZERO INDEX\n");
+  printf("--timeevolve <time>\n");
+  printf("Evolves the cluster data by the given number of years, based on the cluster particle velocities\n");
+  printf("--timestamp\n");
+  printf("Places a timestamp at the beginning of every STDOUT message.\n");
+  printf("--lineofsight\n");
+  printf("Sets the line of sight. X = 0, Y = 1, Z = 2 (default)\n");
+  printf("--unit <unit factor>\n");
+  printf("Multiplies results by <unit factor>\n");
+  printf("--daemon\n");
+  printf("Runs the process as a daemon\n");
 }
 
 std::string Flatten::getTime()
 {
-
   time_t timey;
-
   time ( &timey );
-
-  return std::string(ctime (&timey));
-  
-
+  return ctime (&timey);
 }  
 
 
-double *  Flatten::findBounds(const char * fileName,int columnToSearch,int lineToStartAt)
+double*  Flatten::findBounds(const char * fileName,int columnToSearch,int lineToStartAt)
 {
 
   using namespace std;
@@ -249,7 +246,7 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
   //xBounds and yBounds are the highest and lowest values of x and y
   //coordinates, in the 2-D plane. So x and y mean, 2-D coordinates 
   //not 1st and 2nd column in 3-D particle data
-  if(xBounds == 0)
+  if(xBounds == NULL)
     {
       if(lineOfSight == 2)
 	xBounds = findBounds(fileName,0,1);
@@ -258,7 +255,7 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
       else
 	xBounds = findBounds(fileName,1,1);
     }
-  if(yBounds == 0)
+  if(yBounds == NULL)
     {
       if(lineOfSight == 2)
 	yBounds = findBounds(fileName,1,1);
@@ -287,23 +284,22 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
   int particleCounter = 0;
   int outOfBox = 0;
   if(!readMe.is_open())
-    {
-      throw DavidException(std::string("Could not open: ") + fileName,DavidException::IO_ERROR_CODE);
-    }
+    throw DavidException(std::string("Could not open: ") + fileName,DavidException::IO_ERROR_CODE);
+
   
   char buffer[256];
   bool keepGoing = true;
   
-  DEBUG_PRINT(std::string("Reading ") + fileName);
+  printf("Reading %s\n", fileName);
 
   readMe.getline(buffer,256);
-  DEBUG_PRINT(buffer);
+  printf("%s\n",buffer);
   StringTokenizer tokie(buffer," ");
-  DEBUG_PRINT("Tokenizer started");
+  printf("Tokenizer started\n");
   fileID = tokie.nextToken();//fileID
 
   totalMass = Double(tokie.nextToken()).doubleValue();//total mass of cluster
-  DEBUG_PRINT("Total mass: " << totalMass << " Solar Masses");
+  printf("Total mass: %g Solar Masses\n",totalMass);
   tokie.nextToken();//virial radius
 
   tokie.nextToken();//
@@ -311,13 +307,13 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
   tokie.nextToken();//
   
   numberOfParticles = Double(tokie.nextToken()).doubleValue();//total particle count
-  DEBUG_PRINT(numberOfParticles << " total particles");
+  printf("There are %f total particles\n",numberOfParticles);
 
   deque<Double> stacky;//particles in a column along the line of sight are stored in a stack. Then this stack is popped to sum the total particles, with weight if desired.
 
   Plane<deque<Double> > * returnMe = new Plane<deque<Double> >(resolution.toInt(),resolution.toInt(),stacky);
   std::string newHeader = std::string("#total mass = ") + Double(totalMass).str() +std::string(" solar masses. Dimensions ") + Double(resolution*pixelSize).str() + std::string("x") + Double(resolution*pixelSize).str() + " kpc";
-  verbosePrint(std::string("Parsing file: ") + fileName);
+  printf("Parsing file: %s\n",fileName);
   
   
   while(readMe.getline(buffer,256))
@@ -391,7 +387,7 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
 	{
 	  //if the particle moves out of the box, we're going to ignore it(for now)
 	  outOfBox++;
-	  DEBUG_PRINT("Particle moved out of box");
+	  printf("Particle moved out of box\n");
 	}
       else
 	{
@@ -401,9 +397,9 @@ Plane<std::deque<Double> > * Flatten::parseClusterFile(const char* fileName, Dou
 	}
     }  
 
-  DEBUG_PRINT(Double(1.0*returnMe->numberOfRows()).str() + std::string(" by ") + Double(1.0*returnMe->numberOfColumns()).str() + " plane created: ");
+  printf("%d by %d plane created: %d total particles used with %d particles out of the box\n",
+	 returnMe->numberOfRows(), returnMe->numberOfColumns(),particleCounter,outOfBox);
 
-  DEBUG_PRINT(particleCounter << " total particles used with " << outOfBox << " particles out of the grid");
   newHeader += std::string("\n#Made with " ) + Double(particleCounter - outOfBox).str() + " total particles";
   
   //Set Header
@@ -444,14 +440,13 @@ void Flatten::drawdequePlane(Plane<std::deque<Double> > * planeToPrint,const cha
       }
 
   image.WriteToFile(fileName);
-  verbosePrint(std::string(fileName)+" has been written");
+  printf("%s has been written\n",fileName);
   #endif
 }
 
 void Flatten::writedequePlane(const char * fileName, Plane<std::deque<Double> > * plane)
 {
 
-  DEBUG_PRINT("writing plane");
   using std::deque;
   int width = plane->numberOfRows();
   int height = plane->numberOfColumns();
@@ -502,6 +497,7 @@ int Flatten::createSurfaceMassDensity(const char* fileName, Double resolution, c
 		    if(drawImage)
 		      drawdequePlane(cluster,clusterOutBMP.c_str(),cluster->numberOfRows(),cluster->numberOfColumns());
 #endif
+		    printf("writing plane\n");
 		    writedequePlane(outLENS,cluster);
 
 		    delete cluster;

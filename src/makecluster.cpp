@@ -1,5 +1,10 @@
-#include "create_cluster.h"
+#include <fstream>
+
+#include "libmygl/Cosmology.h"
+
 #include "libdnstd/utils.h"
+
+#include "create_cluster.h"
 
 int uebermain(int argc, char** argv);
 
@@ -92,7 +97,7 @@ int uebermain(int argc, char** argv)
     
     cc.resetRandom(time(NULL));
     
-    int percentFinished = 0;
+    float percentFinished = 0.;
 
     myfile << "#" << time(NULL) << " " << totalMass << " " << 0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << numberOfPoints << std::endl;
     
@@ -110,9 +115,8 @@ int uebermain(int argc, char** argv)
 	   
 	if((i*100/numberOfPoints) >= (percentFinished+5))
 	  {
-	    percentFinished = (int) i*100/numberOfPoints;
-	    VERBOSE_PRINT("Percent finished: ");
-	    VERBOSE_PRINT(percentFinished);
+	    percentFinished = i*100./numberOfPoints;
+	    printf("Percent finished: %02.02f\n",percentFinished);
 	  }
 	
       }

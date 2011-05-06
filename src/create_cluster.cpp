@@ -24,13 +24,9 @@
 #include <iostream>
 #include <fstream>
 
-#include "libdnstd/Double.h"
-#include "libdnstd/DRandom.h"
 #include "libdnstd/DavidException.h"
 
 #include "libmygl/Cosmology.h"
-
-#include "defines.h"
 
 #include "create_cluster.h"
 

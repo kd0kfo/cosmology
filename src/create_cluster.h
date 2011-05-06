@@ -21,6 +21,9 @@
 #ifndef CREATE_CLUSTER_CPP
 #define CREATE_CLUSTER_CPP
 
+#include "libdnstd/Double.h"
+#include "libdnstd/DRandom.h"
+
 class Create_Cluster
 {
 
