@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include "libmygl/plane.h"
+
+struct calcval{double re,im;};
 /* Function type.  */
      typedef double (*func_t) (double);
      
@@ -18,6 +20,7 @@
        {
          double var[2];      /* value of a VAR */
          func_t fnctptr;  /* value of a FNCT */
+	 void (*v_c_fnctptr)(const char*);
 	 Plane<math::Complex>* planeptr;
        } value;
        plane_func_t plane_fnctptr;

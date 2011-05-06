@@ -1,0 +1,81 @@
+/**
+ * 
+ * This file is part of physcalc, an interactive calculator utility
+ * designed to carry out lensing calculations and to manipulate plane
+ * data structures.
+ *
+ * This file contains lexicon of physcalc. It is meant to be used with
+ * flex. For an excellent "A Compact Guide to Lex & Yacc" by Tom Niemann"
+ * available at epaperpress.com. Portions of source code from that paper
+ * are used here with permission given in the Preface (page 3).
+ * 
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * physcalc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * physcalc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
+ */
+%{
+#include <stdlib.h>
+#include "symrec.h"
+#include "physcalc.yacc.h"
+
+#ifndef M_PI
+#define M_PI 3.1415926
+#endif
+
+void yyerror(const char *);
+
+
+%}
+
+%% 
+"ans"  return ANS;
+"exit" return EXIT;
+"quit" return EXIT;
+"i" return IMAG;
+
+"pi" {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
+
+[a-zA-Z][a-zA-Z0-9\.]*  {
+           symrec* rec = getsym(yytext);
+           if(rec == NULL)
+               rec = putsym(yytext,VAR);
+           yylval.tptr = rec;
+          return rec->type;
+        }
+
+[0-9]*\.[0-9]+ {
+                  yylval.val.re = atof(yytext);yylval.val.im = 0;
+                  return NUM;
+              }
+
+[0-9]*    {
+	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
+            return NUM;
+          }
+
+[-()%<>=+*/;\[\],{}^]  {  return *yytext;  }
+
+[ \t\n]+  ;//ignore whitespace
+
+
+.  yyerror("Unknown Character.");
+
+%%
+
+int yywrap(void)
+{
+printf(">");
+return 1;
+}
+

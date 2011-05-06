@@ -1,0 +1,196 @@
+commit bc464196e531110a41f3b4d2ce0dfffe6882034f
+Author: David Coss <David.Coss@stjude.org>
+Date:   Sun Apr 17 17:10:55 2011 -0500
+
+    Added some automake files
+
+commit 139d9deef5c63d43adfe05ad829a0e849af636a0
+Author: David Coss <David.Coss@stjude.org>
+Date:   Sun Mar 27 14:19:32 2011 -0500
+
+    Working on setup GNU automake.
+
+commit a6e7870bca83454052bdf06b2bfa72fd79cdb1f6
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 25 11:35:15 2011 -0500
+
+    All remaining programs compile.
+    
+    Requires libdnstd and libmygl, both versions 2.0
+
+commit 03dc0d179c9e12380dcbef90df112a4b78ff3e4a
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 25 11:26:52 2011 -0500
+
+    Removed utilities as it doesn't add functionality that is not already
+    (or should end up) in physcalc.
+
+commit aeb057c1e28f5bd5f58a7b4a8defeb9d367673f8
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 25 11:24:14 2011 -0500
+
+    Fixed flatten for changes to libdnstd
+
+commit 0c49613d8ffa3e9f19dbf34736e7f8c6373548c8
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 25 11:15:22 2011 -0500
+
+    Fixed ray_trace_ellipse for new libdnstd without classes like
+    DString
+
+commit 71117d5227d4b3527eef214e4144779978400411
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 25 08:42:32 2011 -0500
+
+    Removed files that are no longer needed.
+
+commit 9a261c08cac8d6b87812dc9e10597ee7de9f217e
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 15:44:35 2011 -0500
+
+    Added missing file.
+
+commit 88079bc43fa6e95f838924410781c406febc23a4
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 15:42:09 2011 -0500
+
+    Added missing file.
+
+commit 24c0a2b0133abe000274d8107fdc46d3db8873ef
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 15:41:43 2011 -0500
+
+    Correc
+
+commit 0838c60db3ccdcc93dc40c56e67c4968d9152bd3
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 15:21:23 2011 -0500
+
+    Implemented addition and subtraction for planes.
+
+commit 41a9cc5255e33f28f6391aef9b3203d7750ef720
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 15:11:54 2011 -0500
+
+    Added fourier transform functions to the calculator
+
+commit 3fce399d90a358de66eca607055993f39d5c24d8
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 12:58:17 2011 -0500
+
+    Fixed typo in grammar.
+
+commit 6703066c93e85b0d06c620a36b5c1a12830bcbf4
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 11:50:04 2011 -0500
+
+    Changed plane type (plane_t) to Plane<math::Complex> to support the use of
+    complex planes.
+
+commit 825d971e927cec21ec0264c1cf5c0316e705be5f
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 11:42:42 2011 -0500
+
+    Allowed alphanumeric variables if the first character is a letter.
+
+commit 07be905b5831820d28890d556f09bf87e047e0fd
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 11:35:20 2011 -0500
+
+    Added use of complex numbers
+
+commit 62df524038cda3853195580a62bca62938d1716e
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 10:27:08 2011 -0500
+
+    Added lookup ability for planes. If a plane already exists,
+    using [n,m] will retrieve the element in the n-th row and
+    m-th column.
+
+commit 810aa595e819e273eda47c276f06352c99d72338
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 24 09:41:53 2011 -0500
+
+    Fixed function problem.
+    
+    Added exit and quit commands
+
+commit 04af56e6f79fce1fbb55ededaadb32407521bc30
+Author: David Coss <David.Coss@stjude.org>
+Date:   Wed Mar 23 15:53:07 2011 -0500
+
+    Switched to using lex to form syntax tree builder. This
+    broke functions. So that needs to be fixed.
+
+commit 823da02e5cdae47c0f382f910bc15df0bba25276
+Author: David Coss <David.Coss@stjude.org>
+Date:   Wed Mar 23 14:33:07 2011 -0500
+
+    Cleaned printing function.
+
+commit 10b3d64334c8bb021f440108c67bb6f69c51ae3b
+Author: David Coss <David.Coss@stjude.org>
+Date:   Wed Mar 23 14:03:47 2011 -0500
+
+    Added ability to save and load planes.
+
+commit aea9007ee84b7a6dbf2633ce1a2613d20da6d364
+Author: David Coss <David.Coss@stjude.org>
+Date:   Wed Mar 23 10:42:59 2011 -0500
+
+    Started bison (yacc) based parser that can handle planes.
+
+commit 00ada21722f752a4796a50a5a0d0f213dd0feee0
+Author: David Coss <David.Coss@stjude.org>
+Date:   Tue Mar 22 15:57:35 2011 -0500
+
+    Added exponent, with '^' character, to list of operators.
+
+commit 4caca220ccc6b22c24d9d8bb7a381f6c58956f27
+Author: David Coss <David.Coss@stjude.org>
+Date:   Tue Mar 22 15:15:08 2011 -0500
+
+    Changed mycosmo to a yacc/lex based interpreter. This seems much
+    smater (and easier).
+
+commit 0920a76f8d125954dbf59b7df2d3103c0c21dc3d
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 18 14:08:54 2011 -0500
+
+    Added some grammar code.
+
+commit a5e2707041a39ac84eae6897edf651ca8ada14ec
+Author: David Coss <David.Coss@stjude.org>
+Date:   Fri Mar 18 13:02:07 2011 -0500
+
+    Replaced mycosmo with (what is the start of) a new interpreter.
+
+commit 6e2d6930256e45b805e2b82f52aa2d0823a1c722
+Author: David Coss <David.Coss@stjude.org>
+Date:   Thu Mar 17 16:22:48 2011 -0500
+
+    Working on cleaning things up.
+
+commit 156b3e42ee0f8bae7567bb5edcd26442828f4352
+Author: David Coss (diracnix) <david@davecoss.com>
+Date:   Thu Jan 20 17:12:28 2011 -0600
+
+    Rebuilding and restructuring for changes to libraries.
+
+commit c08c7c817cc8877cbe73eb5ae225b52efd09f18f
+Author: David Coss (diracnix) <david@davecoss.com>
+Date:   Sat Jun 12 16:24:15 2010 -0500
+
+    Commit after move.
+
+commit b5336eed0ad49e4d9ec31e7d6665b43669ad164f
+Author: David Coss <david@davecoss.com>
+Date:   Tue May 11 16:36:59 2010 -0500
+
+    Updated paths in Makefile.
+
+commit 916eaba805db3aee2bec78fd649145a302c187ac
+Author: David Coss <david@davecoss.com>
+Date:   Tue May 11 07:51:22 2010 -0500
+
+    Initial commit.

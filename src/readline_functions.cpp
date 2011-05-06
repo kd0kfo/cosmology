@@ -2,8 +2,6 @@
 #include <readline/history.h>
 #include <vector>
 
-#include "Help.h"
-extern Help readline_help_function();
 char* command_generator PARAMS((const char*, int));
 char** parser_completion PARAMS((const char*, int, int));
 

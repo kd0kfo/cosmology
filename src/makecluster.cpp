@@ -1,21 +1,46 @@
-#include "create_cluster.h"
+/**
+ * 
+ * This file is part of makecluster, a program that creates a mass
+ * distribution data structure (2-D).
+ *
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * makecluster is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * makecluster is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with makecluster.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <fstream>
+
+#include "libmygl/Cosmology.h"
+
 #include "libdnstd/utils.h"
+
+#include "create_cluster.h"
 
 int uebermain(int argc, char** argv);
 
 int main(int argc, char** argv)
 {
-
+  int retval = 0;
   try
     {
-      return uebermain(argc, argv);
+      retval = uebermain(argc, argv);
     }
   catch(DavidException de)
     {
       de.stdErr();
-      return de.getCode();
+      retval = de.getCode();
     }
-  return -1;
+  return retval;
 }
 
 int uebermain(int argc, char** argv)
@@ -33,7 +58,7 @@ int uebermain(int argc, char** argv)
   
 
 
-  std::string fileName(argv[1]);
+  std::string fileName = argv[1];
   double totalMass = Double(argv[2]).doubleValue();
   double numberOfPoints = Double(argv[3]).doubleValue();
   double redshift = Double(argv[4]).doubleValue();
@@ -92,7 +117,7 @@ int uebermain(int argc, char** argv)
     
     cc.resetRandom(time(NULL));
     
-    int percentFinished = 0;
+    float percentFinished = 0.;
 
     myfile << "#" << time(NULL) << " " << totalMass << " " << 0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << numberOfPoints << std::endl;
     
@@ -110,9 +135,8 @@ int uebermain(int argc, char** argv)
 	   
 	if((i*100/numberOfPoints) >= (percentFinished+5))
 	  {
-	    percentFinished = (int) i*100/numberOfPoints;
-	    VERBOSE_PRINT("Percent finished: ");
-	    VERBOSE_PRINT(percentFinished);
+	    percentFinished = i*100./numberOfPoints;
+	    printf("Percent finished: %02.02f\n",percentFinished);
 	  }
 	
       }
