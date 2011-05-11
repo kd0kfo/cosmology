@@ -43,6 +43,7 @@ void yyerror(const char *);
 "exit" return EXIT;
 "quit" return EXIT;
 "copyright" return COPYRIGHT;
+"help" return HELP;
 "i" return IMAG;
 
 "pi" {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
