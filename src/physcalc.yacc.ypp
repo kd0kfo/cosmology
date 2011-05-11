@@ -452,5 +452,5 @@ void do_ls(const char *path)
 void print_copyright()
 {
 	printf("physcalc v%s  Copyright (C) 2010 David Coss, PhD\n",PACKAGE_VERSION);
-	printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYRING file distributed with this program.\n");
+	printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYING file distributed with this program.\n");
 }
