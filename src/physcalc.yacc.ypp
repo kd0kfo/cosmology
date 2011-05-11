@@ -41,6 +41,7 @@
   static const char* PROMPT_STRING = ">";
   class DavidException;
   int yylex (void);
+  extern void yyrestart(FILE *);
   extern char* yytext;
   void yyerror (char const *);
   void do_ls(const char *path);	
@@ -78,7 +79,9 @@ input:   input stmt
      
      stmt:
                ';'
-	       | COPYRIGHT ';' {print_copyright();}
+       	       | COPYRIGHT ';' {print_copyright();printf(">");}
+               | HELP '(' FNCT ')' ';' {print_help($3->name);printf(">");}
+               | HELP ';' {print_help(NULL);printf(">");}
                | EXIT ';' {YYACCEPT;}
                | exp ';'   { print_complex($1); ans = $1;}
                | error ';' { yyerrok;  printf("%s",PROMPT_STRING);         }
@@ -89,8 +92,6 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | VAR                { $$.re = $1->value.var[0];$$.im = $1->value.var[1];}
              | ANS                { $$ = ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var[0] = $3.re;$1->value.var[1]= $3.im; }
-        | HELP '(' FNCT ')'{print_help($3->name);}
-        | HELP {print_help(NULL);}
 	| FNCT '(' ')' {do_funct($1,ans); $$ = ans;}
              | FNCT '(' VAR ')'   { do_funct($1,$3,ans); $$ = ans;}
              | FNCT '(' exp ')'   { do_funct($1,$3,ans); $$ = ans;}
@@ -134,8 +135,9 @@ symrec *
        return 0;
      }
 
+#if 0
 #include <ctype.h>
-#if 0     
+
      int
      yylex (void)
      {
@@ -279,17 +281,32 @@ symrec *
      }
      
      int
-     main (void)
+     main (int argc, char **argv)
      {
-       print_copyright();
        symrec *funct;
+       FILE *input = NULL;
+       print_copyright();
        init_table ();
-       printf("\n");
-       printf("Welcome! To exit, type quit.\nALL statements must end with a semicolon.\n%s",PROMPT_STRING);
-       yyparse();
-       printf("Good bye.\n");
-       return 0;
-     }
+       if(argc > 1)
+       {
+	 input = fopen(argv[1],"r");
+	 if(input != NULL)
+	 	  yyrestart(input);
+       }
+
+       if(input == NULL)
+       {
+              printf("\n");
+       	      printf("Welcome! To exit, type quit.\nALL statements must end with a semicolon.\n%s",PROMPT_STRING);
+	      yyparse();
+	      printf("Good bye.\n");
+      }
+      else
+      {
+	yyparse();      
+      }
+     return 0;
+}
 
 void do_funct(symrec *rec, struct calcval param, struct calcval result)
 {

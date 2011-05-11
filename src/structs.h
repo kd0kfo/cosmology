@@ -45,7 +45,7 @@ struct ray_trace_arguments {
   std::string makeMassDensity;// flag to indicate whether the mass should be made before the lensing.
   std::string parameter_name;// filename for parameters
 
-  bool runExistingDeflection, createDeflection, runSim, runAsDaemon;
+  bool runExistingDeflection, createDeflection, runSim;
   bool useTimeStamp, drawRemovedArea, verbose, useRandom;
   bool includeCricalCurveAndCaustic;///< Whether Critical Curves and Caustics should be used.
 

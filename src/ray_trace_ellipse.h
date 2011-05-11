@@ -107,7 +107,7 @@ bool writeParameters(const struct ray_trace_arguments *args,
  * @param massDensity DensityProfile containing the 2D mass density
  * @throw DavidException Exception thrown upon error (if you're lucky)
  */
-int simulation(struct ray_trace_arguments *args,Plane<Double> **lens, Plane<Double> **sources, DensityProfile **massDensity) throw (DavidException);
+int simulation(struct ray_trace_arguments *args,Plane<Double> **lens, Plane<Double> **sources) throw (DavidException);
 
 /**
  * Creates parameters for a lens to be used in the simulation

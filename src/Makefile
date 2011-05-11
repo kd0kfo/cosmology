@@ -41,8 +41,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = ray_trace_ellipse$(EXEEXT) flatten$(EXEEXT) \
 	physcalc$(EXEEXT) makecluster$(EXEEXT)
-am__append_1 = mpi_utils.cpp
-am__append_2 = -I${MPI_PATH}/include
+#am__append_1 = mpi_utils.cpp
+#am__append_2 = -I${MPI_PATH}/include
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	physcalc.lex.cpp physcalc.yacc.cpp physcalc.yacc.h
@@ -70,8 +70,8 @@ physcalc_OBJECTS = $(am_physcalc_OBJECTS)
 physcalc_DEPENDENCIES =
 am__ray_trace_ellipse_SOURCES_DIST = ray_trace_ellipse.cpp \
 	mpi_utils.cpp
-am__objects_1 =  \
-	ray_trace_ellipse-mpi_utils.$(OBJEXT)
+#am__objects_1 =  \
+#	ray_trace_ellipse-mpi_utils.$(OBJEXT)
 am_ray_trace_ellipse_OBJECTS =  \
 	ray_trace_ellipse-ray_trace_ellipse.$(OBJEXT) $(am__objects_1)
 ray_trace_ellipse_OBJECTS = $(am_ray_trace_ellipse_OBJECTS)
@@ -106,16 +106,16 @@ AUTOCONF = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run autoconf
 AUTOHEADER = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run autoheader
 AUTOMAKE = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run automake-1.9
 AWK = gawk
-BUILD_WITH_MPI_FALSE = #
-BUILD_WITH_MPI_TRUE = 
+BUILD_WITH_MPI_FALSE = 
+BUILD_WITH_MPI_TRUE = #
 CC = mpicc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -D__DEBUG__ -ggdb -O0
+CFLAGS = -g -O2
 CPP = mpicc -E
 CPPFLAGS = 
 CXX = mpic++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -D__DEBUG__ -ggdb -O0
+CXXFLAGS = -g -O2
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -129,7 +129,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LDFLAGS = -D__DEBUG__ -ggdb -O0
+LDFLAGS = 
 LEX = flex
 LEXLIB = -lfl
 LEX_OUTPUT_ROOT = lex.yy
@@ -139,19 +139,19 @@ LIBOBJS =
 LIBS = 
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/dcoss/tmp/tmp/c/missing --run makeinfo
-MPI_PATH = /home/dcoss/opt/openmpi
+MPI_PATH = 
 OBJEXT = o
 PACKAGE = mycosmo
 PACKAGE_BUGREPORT = david@davecoss.com
 PACKAGE_NAME = mycosmo
-PACKAGE_STRING = mycosmo 2.0
+PACKAGE_STRING = mycosmo 2.2
 PACKAGE_TARNAME = mycosmo
-PACKAGE_VERSION = 2.0
+PACKAGE_VERSION = 2.2
 PATH_SEPARATOR = :
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 2.0
+VERSION = 2.2
 YACC = bison -y
 ac_ct_CC = mpicc
 ac_ct_CXX = mpic++

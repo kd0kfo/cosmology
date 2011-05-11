@@ -28,10 +28,8 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-
-#ifdef _WIN32
+#include <stdarg.h>
 #include <time.h>
-#endif
 
 #include "libdnstd/utils.h"
 #include "libdnstd/Complex.h"
@@ -39,6 +37,7 @@
 #include "libdnstd/XMLParser.h"
 #include "libdnstd/XMLNode.h"
 
+#include "libmygl/densityprofile.h"
 #include "libmygl/glellipse.h"
 #include "libmygl/planecreator.h"
 #include "libmygl/structs.h"
@@ -74,6 +73,7 @@ void DefaultParameters(struct general_parameters *params)
   params->solar_mass = 2e+33;//Solar mass, grams
   params->distance_scale = 3.09e+24;//distance scale Mpc
   params->c = 3e+10;//speed of light in cm/s
+  params->showCriticalCurves = false;
 }
 
 int main(int argc, char** argv)
@@ -140,8 +140,6 @@ int super_main(int argc, char** argv)
     glellipseBounds[i] = -1;
 
   int retval = parseArgs(argc,argv,&args);
-  if(args.runAsDaemon)
-    printf("DAEMON PROCESS\n");
 
   if(args.makeMassDensity.size() != 0)
     createSurfaceMassDensity(args.makeMassDensity,args);
@@ -151,20 +149,10 @@ int super_main(int argc, char** argv)
       return retval;
     }
 
-  if(!args.runAsDaemon)
-    {
-      retval = sub_main(&args);
-      if(args.offset != NULL)
-	delete [] args.offset;
-      return retval;
-    }
-
-  int returnValue = 0;
-	
+  retval = sub_main(&args);
   if(args.offset != NULL)
     delete [] args.offset;
-  
-  return returnValue;
+  return retval;
 }
 
 int sub_main(struct ray_trace_arguments *args)
@@ -198,12 +186,10 @@ int run_simulation(struct ray_trace_arguments *args)
   if(access(args->sourceBMPFilename.c_str(),R_OK) == 0)
     sources = Plane<Double>::bmpToPlane(args->sourceBMPFilename);
 #endif
-  DensityProfile * massDensity = NULL;
-  
   string fullLensFilename = args->fileNamePrefix  + "lensedimage.bmp";
 
   // setup simulation
-  simulation(args,&lens,&sources, &massDensity);
+  simulation(args,&lens,&sources);
 
 
 #ifndef __USE_BOINC__
@@ -221,13 +207,7 @@ int run_simulation(struct ray_trace_arguments *args)
   delete randy;
   delete lens;
   delete sources;
-  if(massDensity != 0)
-    {
-      massDensity->clearAllFields();
-      delete massDensity;
-    }
-	
-  massDensity = 0;
+
   randy = 0;
   lens = sources = lensMassPlane = 0;
 	
@@ -236,35 +216,30 @@ int run_simulation(struct ray_trace_arguments *args)
 
 
 
-int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane<Double> **sources_addr, DensityProfile **massDensity_addr) throw (DavidException)
+int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane<Double> **sources_addr) throw (DavidException)
 {
 	
 	
   using namespace std;
   using utils::DRandom;
   Plane<Double> *lens, *sources;
-  DensityProfile *massDensity;
+  DensityProfile *massDensity = NULL;
   struct lens_parameters lensParams;
   struct general_parameters params;
   struct source_parameters sourceParams;
   int N = 0;
 	
-  if(args == NULL || lens_addr == NULL || sources_addr == NULL || massDensity_addr == NULL)
+  if(args == NULL || lens_addr == NULL || sources_addr == NULL)
     throw DavidException("simulation: Need arguments. Got null pointer.",DavidException::NULL_POINTER);
   
-  massDensity = *massDensity_addr;
   args->includeCricalCurveAndCaustic = false;
 
-  if(args == NULL || args->parameter_name.size() == 0)
-    {
-      createLensParams(&lensParams,0);
-      DefaultParameters(&params);
-    }
-  else
+  createLensParams(&lensParams,0);
+  DefaultParameters(&params);
+  if(args != NULL && args->parameter_name.size() != 0)
     {
       verbosePrint(args,"Loading parameters\n");
       loadParameters(args,&params,&lensParams,&sourceParams);
-
     }
 
   N = params.ndim;
@@ -283,11 +258,8 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane
   verbosePrint(args,"Process %d: Making plane dim: %d, %d, %d, %d\n",mpi_data.rank,glellipseBounds[0],glellipseBounds[1],glellipseBounds[2],glellipseBounds[3]);
 #endif
 
-  // setup planes
-  delete massDensity;// deleting in case it was already provided. Either way it should be built here.
-
   verbosePrint(args,"Creating Mass density\n");
-  massDensity = new DensityProfile(&args->lensMassDensity, &lensParams, &params);  *massDensity_addr = massDensity;
+  massDensity = new DensityProfile(&args->lensMassDensity, &lensParams, &params);
   
   GLAlgorithm gl;
 
@@ -420,7 +392,13 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane
   writeParameters(args,params,lensParams,sourceParams);
 #endif
 
-  *massDensity_addr = massDensity;
+  if(massDensity != NULL)
+    {
+      massDensity->clearAllFields();
+      delete massDensity;
+    }
+  if(gl.getDeflectionPlane() != NULL)
+    delete gl.getDeflectionPlane();
   return 0;
 }
 
@@ -663,7 +641,6 @@ void default_arguments(struct ray_trace_arguments *args)
   args->lensMassDeflectionPlane = "lens";
   args->drawRemovedArea = false;
   args->useTimeStamp = false;
-  args->runAsDaemon = false;
   args->verbose = false;
   args->useRandom = false;
 }
@@ -822,9 +799,6 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  break;
 	case 'm':
 	  args->lensMassDensity = Plane<Double>::readPlane(optarg);
-	  break;
-	case 'd':
-	  args->runAsDaemon = true;
 	  break;
 	case 't':
 	  args->useTimeStamp = true;
@@ -1157,7 +1131,7 @@ void verbosePrint(const struct ray_trace_arguments *args, const char * frmt, ...
   if(args != NULL && args->verbose == 0)
     return;
 
-  if(args->runAsDaemon || args->useTimeStamp)
+  if(args->useTimeStamp)
     std::cout << getTime() << ": ";
 
   va_list ap;
