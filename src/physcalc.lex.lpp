@@ -61,10 +61,26 @@ void yyerror(const char *);
                   return NUM;
               }
 
-[0-9]*    {
+[1-9][0-9]*    {
 	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
             return NUM;
           }
+
+0x[0-9a-fA-F]* {
+	       unsigned int tmp;
+	       sscanf(yytext,"0x%x",&tmp);
+	       yylval.val.re = (double)tmp;
+	       yylval.val.im = 0;
+	       return NUM;
+	       }
+
+0[0-9a-fA-F]* {
+	       unsigned int tmp;
+	       sscanf(yytext,"0%o",&tmp);
+	       yylval.val.re = (double)tmp;
+	       yylval.val.im = 0;
+	       return NUM;
+	       }
 
 [-()%<>=+*/;\[\],{}^]  {  return *yytext;  }
 

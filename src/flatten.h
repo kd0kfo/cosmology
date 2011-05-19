@@ -21,7 +21,7 @@
 #ifndef FLATTEN_CPP
 #define FLATTEN_CPP
 
-#include <deque.h>
+#include <deque>
 
 #include "libdnstd/Double.h"
 
