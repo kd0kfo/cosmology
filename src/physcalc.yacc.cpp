@@ -1910,17 +1910,22 @@ symrec *
      
      struct init const arith_fncts[] =
      {
-       "sin",  sin,0,
-       "cos",  cos,0,
-       "tan",  tan,0,
-       "asin", asin,0,
+       "abs",  fabs,0,
        "acos", acos,0,
+       "asin", asin,0,
        "atan", atan,0,
-       "ln",   log,0,
-       "exp",  exp,0,
-       "sqrt", sqrt,0,
-       "floor", floor,0,
        "ceil", ceil,0,
+       "cos",  cos,0,
+       "cosh",  cosh,0,
+       "exp",  exp,0,
+       "floor", floor,0,
+       "sin",  sin,0,
+       "sinh",  sinh,0,
+       "sqrt", sqrt,0,
+       "tan",  tan,0,
+       "tanh",  tanh,0,
+       "log",  log10,0,
+       "ln",   log,0,
        0, 0, 0
      };
 
@@ -2008,7 +2013,6 @@ void do_funct(symrec *rec, struct calcval param, struct calcval *result)
 
     result->re = (*rec->value.fnctptr)(param.re);
     result->im = 0;
-    printf("funct: %s(%f) = %f",rec->name,param.re,result->re);
 }
 
 void do_funct(symrec *rec, symrec *param, struct calcval *result)
@@ -2121,7 +2125,19 @@ void print_help(const char *keyword)
 		printf("fourier -- fourier transforms a plane. Performed in place.\nUsage: fourier(A)\n\t\tA <- F(A)\n");
 	if(keyword == NULL || strcmp(keyword,"ifourier") == 0)
 		printf("ifourier -- inverse fourier transforms a plane. Performed in place.\nUsage: ifourier(A)\n\t\tA <- F^-1 (A)\n");
-	
+	if(keyword == NULL)
+	{
+		printf("\nThe following standard functions are also included:\n"); 
+		const struct init *curr = arith_fncts;
+		while(curr != NULL && curr->fname != 0)
+		{
+			printf("%s",curr->fname);
+			curr = curr++;
+			if(curr != NULL && curr->fname != 0)
+				printf(",");
+		}
+		printf("\n");
+	}
 }
 
 void do_ls(const char *path)
