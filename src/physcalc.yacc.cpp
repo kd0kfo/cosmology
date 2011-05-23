@@ -90,12 +90,12 @@
   void yyerror (char const *);
   void do_ls(const char *path);	
   void print_help(const char *keyword);
-  void do_funct(symrec* fnct,  struct calcval result);
-  void do_funct(symrec* fnct, symrec* param, struct calcval result);
-  void do_funct(symrec* fnct, struct calcval param, struct calcval result);
-  void do_funct2(symrec* fnct, symrec* param, symrec* param2, struct calcval result);
+  void do_funct(symrec* fnct,  struct calcval *result);
+  void do_funct(symrec* fnct, symrec* param, struct calcval *result);
+  void do_funct(symrec* fnct, struct calcval param, struct calcval *result);
+  void do_funct2(symrec* fnct, symrec* param, symrec* param2, struct calcval *result);
   int update_vars(symrec* var);
-  void handle_plane(symrec *rec,double& i, double& j, struct calcval);
+  void handle_plane(symrec *rec,double& i, double& j, struct calcval*);
   struct calcval ans;
   void print_complex(struct calcval);
   void print_copyright();
@@ -1497,28 +1497,28 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 95 "physcalc.yacc.ypp"
-    {do_funct((yyvsp[(1) - (3)].tptr),ans); (yyval.val) = ans;}
+    {do_funct((yyvsp[(1) - (3)].tptr),&ans); (yyval.val) = ans;}
     break;
 
   case 17:
 
 /* Line 1455 of yacc.c  */
 #line 96 "physcalc.yacc.ypp"
-    { do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].tptr),ans); (yyval.val) = ans;}
+    {  do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].tptr),&ans);(yyval.val) = ans;}
     break;
 
   case 18:
 
 /* Line 1455 of yacc.c  */
 #line 97 "physcalc.yacc.ypp"
-    { do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].val),ans); (yyval.val) = ans;}
+    { do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].val),&ans); (yyval.val) = ans;}
     break;
 
   case 19:
 
 /* Line 1455 of yacc.c  */
 #line 98 "physcalc.yacc.ypp"
-    { do_funct2((yyvsp[(1) - (6)].tptr), (yyvsp[(3) - (6)].tptr), (yyvsp[(5) - (6)].tptr),ans); (yyval.val) = ans;}
+    { do_funct2((yyvsp[(1) - (6)].tptr), (yyvsp[(3) - (6)].tptr), (yyvsp[(5) - (6)].tptr),&ans); (yyval.val) = ans;}
     break;
 
   case 20:
@@ -1581,7 +1581,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 107 "physcalc.yacc.ypp"
-    {handle_plane((yyvsp[(1) - (6)].tptr),(yyvsp[(3) - (6)].val).re,(yyvsp[(5) - (6)].val).re,ans);(yyval.val) = ans;}
+    {handle_plane((yyvsp[(1) - (6)].tptr),(yyvsp[(3) - (6)].val).re,(yyvsp[(5) - (6)].val).re,&ans);(yyval.val) = ans;}
     break;
 
 
@@ -2001,16 +2001,17 @@ symrec *
      return 0;
 }
 
-void do_funct(symrec *rec, struct calcval param, struct calcval result)
+void do_funct(symrec *rec, struct calcval param, struct calcval *result)
 {
   if(rec == NULL || rec->plane_fnctptr != NULL)
     return;
-    
-  result.re = (*(rec->value.fnctptr))(param.re);      
-  result.im = 0.0;
+
+    result->re = (*rec->value.fnctptr)(param.re);
+    result->im = 0;
+    printf("funct: %s(%f) = %f",rec->name,param.re,result->re);
 }
 
-void do_funct(symrec *rec, symrec *param, struct calcval result)
+void do_funct(symrec *rec, symrec *param, struct calcval *result)
 {
   if(rec == NULL || param == NULL)
     return;
@@ -2027,14 +2028,17 @@ void do_funct(symrec *rec, symrec *param, struct calcval result)
     }
 
   if(rec->value.v_c_fnctptr != 0)
-	return (*rec->value.v_c_fnctptr)(param->name);
+  {
+	(*rec->value.v_c_fnctptr)(param->name);
+	return;
+  }
 
-  result.re = (*(rec->value.fnctptr))(param->value.var[0]);
-  result.im = 0.0;
+  result->re = (*(rec->value.fnctptr))(param->value.var[0]);
+  result->im = 0.0;
 }
 
 
-void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval result)
+void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval *result)
 {
   if(rec == NULL || param == NULL || param2 == NULL)
     return;
@@ -2051,7 +2055,7 @@ void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval result
 
 }
 
-void handle_plane(symrec *rec,double& i, double& j, struct calcval result)
+void handle_plane(symrec *rec,double& i, double& j, struct calcval *result)
 {
   rec->isPlane = true;
   if(rec->value.planeptr == NULL)
@@ -2061,8 +2065,8 @@ void handle_plane(symrec *rec,double& i, double& j, struct calcval result)
     }
   try{
     const Double& complex = rec->value.planeptr->getValue((int)i,(int)j);
-    result.re = complex.getValue(0);
-    result.im = complex.getValue(1);
+    result->re = complex.getValue(0);
+    result->im = complex.getValue(1);
   }
   catch(DavidException de)
     {
@@ -2084,7 +2088,7 @@ void print_complex(struct calcval cnumber)
   cout <<   endl << ">";
 }
 
-void do_funct(symrec* fnct,  struct calcval result)
+void do_funct(symrec* fnct,  struct calcval *result)
 {
 	if(fnct == NULL)
 		return;

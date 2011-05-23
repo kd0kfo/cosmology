@@ -46,12 +46,12 @@
   void yyerror (char const *);
   void do_ls(const char *path);	
   void print_help(const char *keyword);
-  void do_funct(symrec* fnct,  struct calcval result);
-  void do_funct(symrec* fnct, symrec* param, struct calcval result);
-  void do_funct(symrec* fnct, struct calcval param, struct calcval result);
-  void do_funct2(symrec* fnct, symrec* param, symrec* param2, struct calcval result);
+  void do_funct(symrec* fnct,  struct calcval *result);
+  void do_funct(symrec* fnct, symrec* param, struct calcval *result);
+  void do_funct(symrec* fnct, struct calcval param, struct calcval *result);
+  void do_funct2(symrec* fnct, symrec* param, symrec* param2, struct calcval *result);
   int update_vars(symrec* var);
-  void handle_plane(symrec *rec,double& i, double& j, struct calcval);
+  void handle_plane(symrec *rec,double& i, double& j, struct calcval*);
   struct calcval ans;
   void print_complex(struct calcval);
   void print_copyright();
@@ -92,10 +92,10 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | VAR                { $$.re = $1->value.var[0];$$.im = $1->value.var[1];}
              | ANS                { $$ = ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var[0] = $3.re;$1->value.var[1]= $3.im; }
-	| FNCT '(' ')' {do_funct($1,ans); $$ = ans;}
-             | FNCT '(' VAR ')'   { do_funct($1,$3,ans); $$ = ans;}
-             | FNCT '(' exp ')'   { do_funct($1,$3,ans); $$ = ans;}
-             | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,ans); $$ = ans;}
+	| FNCT '(' ')' {do_funct($1,&ans); $$ = ans;}
+             | FNCT '(' VAR ')'   {  do_funct($1,$3,&ans);$$ = ans;}
+             | FNCT '(' exp ')'   { do_funct($1,$3,&ans); $$ = ans;}
+             | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,&ans); $$ = ans;}
              | exp '+' exp        { $$.re = $1.re + $3.re;$$.im = $1.im+$3.im;}
              | exp '-' exp        { $$.re = $1.re - $3.re;$$.im = $1.im-$3.im;}
              | exp '*' exp        { $$.re = $1.re * $3.re-$1.im*$3.im;$$.im = $1.re*$3.im+$1.im*$3.re;}
@@ -104,7 +104,7 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | '-' exp  %prec NEG { $$.re = -$2.re;$$.im = -$2.im;         }
              | exp '^' exp        { $$.re = pow ($1.re, $3.re);$$.im=0; }
              | '(' exp ')'        { $$ = $2;                         }
-             | VAR '[' exp ',' exp ']' {handle_plane($1,$3.re,$5.re,ans);$$ = ans;} 
+             | VAR '[' exp ',' exp ']' {handle_plane($1,$3.re,$5.re,&ans);$$ = ans;} 
             ;
      /* End of grammar.  */
 %%
@@ -308,16 +308,17 @@ symrec *
      return 0;
 }
 
-void do_funct(symrec *rec, struct calcval param, struct calcval result)
+void do_funct(symrec *rec, struct calcval param, struct calcval *result)
 {
   if(rec == NULL || rec->plane_fnctptr != NULL)
     return;
-    
-  result.re = (*(rec->value.fnctptr))(param.re);      
-  result.im = 0.0;
+
+    result->re = (*rec->value.fnctptr)(param.re);
+    result->im = 0;
+    printf("funct: %s(%f) = %f",rec->name,param.re,result->re);
 }
 
-void do_funct(symrec *rec, symrec *param, struct calcval result)
+void do_funct(symrec *rec, symrec *param, struct calcval *result)
 {
   if(rec == NULL || param == NULL)
     return;
@@ -334,14 +335,17 @@ void do_funct(symrec *rec, symrec *param, struct calcval result)
     }
 
   if(rec->value.v_c_fnctptr != 0)
-	return (*rec->value.v_c_fnctptr)(param->name);
+  {
+	(*rec->value.v_c_fnctptr)(param->name);
+	return;
+  }
 
-  result.re = (*(rec->value.fnctptr))(param->value.var[0]);
-  result.im = 0.0;
+  result->re = (*(rec->value.fnctptr))(param->value.var[0]);
+  result->im = 0.0;
 }
 
 
-void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval result)
+void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval *result)
 {
   if(rec == NULL || param == NULL || param2 == NULL)
     return;
@@ -358,7 +362,7 @@ void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval result
 
 }
 
-void handle_plane(symrec *rec,double& i, double& j, struct calcval result)
+void handle_plane(symrec *rec,double& i, double& j, struct calcval *result)
 {
   rec->isPlane = true;
   if(rec->value.planeptr == NULL)
@@ -368,8 +372,8 @@ void handle_plane(symrec *rec,double& i, double& j, struct calcval result)
     }
   try{
     const Double& complex = rec->value.planeptr->getValue((int)i,(int)j);
-    result.re = complex.getValue(0);
-    result.im = complex.getValue(1);
+    result->re = complex.getValue(0);
+    result->im = complex.getValue(1);
   }
   catch(DavidException de)
     {
@@ -391,7 +395,7 @@ void print_complex(struct calcval cnumber)
   cout <<   endl << ">";
 }
 
-void do_funct(symrec* fnct,  struct calcval result)
+void do_funct(symrec* fnct,  struct calcval *result)
 {
 	if(fnct == NULL)
 		return;
