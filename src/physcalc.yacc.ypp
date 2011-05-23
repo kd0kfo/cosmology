@@ -117,6 +117,7 @@ symrec *
        ptr->name = (char *) malloc (strlen (sym_name) + 1);
        strcpy (ptr->name,sym_name);
        ptr->type = sym_type;
+       ptr->isPlaneFunction = false;
        ptr->value.var[0] = 0; /* Set value to 0 even if fctn.  */
        ptr->value.var[1] = 0;
        ptr->next = (struct symrec *)sym_table;
@@ -264,7 +265,6 @@ symrec *
 	   else if(curr[i].v_c_fnct != 0)
 	          ptr->value.v_c_fnctptr =	 curr[i].v_c_fnct;
            ptr->plane_fnctptr = NULL;
-	
 
            i++;
 	   if(curr == arith_fncts && curr[i].fname == 0)
@@ -273,16 +273,16 @@ symrec *
 	   }
          }
 
-       putsym("print",FNCT)->plane_fnctptr = print_plane;
-       putsym("clear",FNCT)->plane_fnctptr = clear_plane;
-       putsym("add",FNCT)->plane_fnctptr = add_planes;
-       putsym("subtract",FNCT)->plane_fnctptr = subtract_planes;
-       putsym("multiply",FNCT)->plane_fnctptr = multiply_planes;
-       putsym("open",FNCT)->plane_fnctptr = open_plane;
-       putsym("save",FNCT)->plane_fnctptr = save_plane;
-       putsym("copy",FNCT)->plane_fnctptr = copy_plane;
-       putsym("fourier",FNCT)->plane_fnctptr = fourier_plane;
-       putsym("ifourier",FNCT)->plane_fnctptr = ifourier_plane;
+       ptr = putsym("print",FNCT);ptr->plane_fnctptr = print_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("clear",FNCT);ptr->plane_fnctptr = clear_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("add",FNCT);ptr->plane_fnctptr = add_planes;ptr->isPlaneFunction = true;
+       ptr = putsym("subtract",FNCT);ptr->plane_fnctptr = subtract_planes;ptr->isPlaneFunction = true;
+       ptr = putsym("multiply",FNCT);ptr->plane_fnctptr = multiply_planes;ptr->isPlaneFunction = true;
+       ptr = putsym("open",FNCT);ptr->plane_fnctptr = open_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("save",FNCT);ptr->plane_fnctptr = save_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("copy",FNCT);ptr->plane_fnctptr = copy_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("fourier",FNCT);ptr->plane_fnctptr = fourier_plane;ptr->isPlaneFunction = true;
+       ptr = putsym("ifourier",FNCT);ptr->plane_fnctptr = ifourier_plane;ptr->isPlaneFunction = true;
      }
      
      int
@@ -327,7 +327,7 @@ void do_funct(symrec *rec, symrec *param, struct calcval *result)
   if(rec == NULL || param == NULL)
     return;
 
-  if(rec->plane_fnctptr != NULL)
+  if(rec->plane_fnctptr != 0)
     {
       symrec* newrec = (*rec->plane_fnctptr)(&param,1);
       if(newrec != NULL)
@@ -338,13 +338,12 @@ void do_funct(symrec *rec, symrec *param, struct calcval *result)
        return;
     }
 
-  if(rec->value.v_c_fnctptr != 0)
+  if(rec->value.v_c_fnctptr != 0 && rec->isPlaneFunction)
   {
 	(*rec->value.v_c_fnctptr)(param->name);
 	return;
   }
-
-  result->re = (*(rec->value.fnctptr))(param->value.var[0]);
+  result->re = (*rec->value.fnctptr)(param->value.var[0]);
   result->im = 0.0;
 }
 
@@ -353,7 +352,7 @@ void do_funct2(symrec* rec, symrec* param, symrec* param2, struct calcval *resul
 {
   if(rec == NULL || param == NULL || param2 == NULL)
     return;
-  if(rec->plane_fnctptr == NULL)
+  if(rec->plane_fnctptr == NULL ||  !rec->isPlaneFunction)
     return;
 
   symrec* params[] = {param,param2};

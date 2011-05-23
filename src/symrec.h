@@ -24,7 +24,7 @@ struct symrec
     Plane<math::Complex>* planeptr;
   } value;
   plane_func_t plane_fnctptr;
-  bool isPlane;
+  bool isPlane,isPlaneFunction;
   struct symrec *next;  /* link field */
 };
      
