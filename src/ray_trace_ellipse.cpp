@@ -761,16 +761,20 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  break;
 	case XOFFSET:
 	  {
+	    float tmpfloat;
 	    if(args->offset == NULL)
 	      args->offset = new double[2];
-	    sscanf(optarg,"%f",&args->offset[0]);
+	    sscanf(optarg,"%f",&tmpfloat);
+	    args->offset[0] = tmpfloat;
 	    break;
 	  }
 	case YOFFSET:
 	  {
+	    float tmpfloat;
 	    if(args->offset == NULL)
 	      args->offset = new double[2];
-	    sscanf(optarg,"%f",&args->offset[1]);
+	    sscanf(optarg,"%f",&tmpfloat);
+	    args->offset[1] = tmpfloat;
 	    break;
 	  }
 	case FILE_PREFIX:
