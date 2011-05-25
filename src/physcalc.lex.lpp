@@ -38,6 +38,17 @@ void yyerror(const char *);
 
 %}
 
+whitespace [ \t\n]+
+zero 0
+nonnegative [0-9]
+integer [1-9]{nonnegative}*
+exponent [eE][+-]{nonnegative}*
+decimal {integer}*\.{nonnegative}*{exponent}?
+hex 0x[0-9a-fA-F]*
+octal 0[0-9a-fA-F]*
+imagint {integer}[iI]
+imagdecimal {decimal}[iI]
+
 %% 
 "ans"  return ANS;
 "exit" return EXIT;
@@ -55,18 +66,29 @@ void yyerror(const char *);
            yylval.tptr = rec;
           return rec->type;
         }
+{zero} { yylval.val.re = 0; yylval.val.im = 0;return NUM;}
 
-[0-9]*\.[0-9]+ {
+{decimal} {
                   yylval.val.re = atof(yytext);yylval.val.im = 0;
                   return NUM;
               }
 
-[1-9][0-9]*    {
+{imagdecimal} {
+                  yylval.val.im = atof(yytext);yylval.val.re = 0;
+                  return NUM;
+              }
+
+{integer}    {
 	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
             return NUM;
           }
 
-0x[0-9a-fA-F]* {
+{imagint}    {
+	    yylval.val.im  = atoi(yytext);yylval.val.re = 0.0;
+            return NUM;
+           }
+
+{hex} {
 	       unsigned int tmp;
 	       sscanf(yytext,"0x%x",&tmp);
 	       yylval.val.re = (double)tmp;
@@ -74,7 +96,7 @@ void yyerror(const char *);
 	       return NUM;
 	       }
 
-0[0-9a-fA-F]* {
+{octal} {
 	       unsigned int tmp;
 	       sscanf(yytext,"0%o",&tmp);
 	       yylval.val.re = (double)tmp;
@@ -84,7 +106,7 @@ void yyerror(const char *);
 
 [-()%<>=+*/;\[\],{}^]  {  return *yytext;  }
 
-[ \t\n]+  ;//ignore whitespace
+{whitespace}  ;//ignore whitespace
 
 
 .  yyerror("Unknown Character.");
