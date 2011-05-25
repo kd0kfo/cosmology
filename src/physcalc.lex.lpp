@@ -43,7 +43,7 @@ zero 0
 nonnegative [0-9]
 integer [1-9]{nonnegative}*
 exponent [eE][+-]{nonnegative}*
-decimal {integer}*\.{nonnegative}*{exponent}?
+decimal {zero}?{integer}*\.{nonnegative}*{exponent}?
 hex 0x[0-9a-fA-F]*
 octal 0[0-9a-fA-F]*
 imagint {integer}[iI]
