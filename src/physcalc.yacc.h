@@ -69,7 +69,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 60 "physcalc.yacc.ypp"
+#line 53 "physcalc.yacc.ypp"
 
   struct calcval val;   /* For returning numbers.  */
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */

@@ -17,7 +17,7 @@ flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
 flatten_LDADD = -lmygl -ldnstd
 
 AM_YFLAGS = -d
-physcalc_SOURCES =  physcalc.yacc.ypp physcalc.lex.lpp 
+physcalc_SOURCES =  physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp
 physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ -I${FFTW3_PATH}/include
 physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib -L${FFTW3_PATH}/lib
 physcalc_LDADD = -lmygl -ldnstd -lfftw3 
