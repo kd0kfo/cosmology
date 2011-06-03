@@ -43,10 +43,7 @@
   extern void yyrestart(FILE *);
   extern char* yytext;
   void yyerror (char const *);
-namespace physcalc{
-  struct calcval ans;
-}
-
+  extern int PHYSCALC_is_interactive;
 
  %}
 %union {
@@ -71,23 +68,23 @@ input:   input stmt
      
      stmt:
                ';'
-       	       | COPYRIGHT ';' {print_copyright();printf(">");}
-               | HELP '(' FNCT ')' ';' {print_help($3->name);printf(">");}
-               | HELP ';' {print_help(NULL);printf(">");}
+       	       | COPYRIGHT ';' {print_copyright();if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
+               | HELP '(' FNCT ')' ';' {print_help($3->name);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
+               | HELP ';' {print_help(NULL);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | EXIT ';' {YYACCEPT;}
-               | exp ';'   { print_complex($1); physcalc::ans = $1;}
-               | error ';' { yyerrok;  printf("%s",PROMPT_STRING);         }
+               | exp ';'   { print_complex($1); PHYSCALC_ans = $1;}
+               | error ';' { yyerrok; if(PHYSCALC_is_interactive) printf("%s",PROMPT_STRING);         }
                ;
 
 exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | NUM IMAG { yylval.val.re = 0;yylval.val.im = $1.re;$$ = yylval.val;}
              | VAR                { $$.re = $1->value.var[0];$$.im = $1->value.var[1];}
-             | ANS                { $$ = physcalc::ans;             } 
+             | ANS                { $$ = PHYSCALC_ans;             } 
              | VAR '=' exp        { $$ = $3; $1->value.var[0] = $3.re;$1->value.var[1]= $3.im; }
-	| FNCT '(' ')' {do_funct($1,&physcalc::ans); $$ = physcalc::ans;}
-             | FNCT '(' VAR ')'   {  do_funct($1,$3,&physcalc::ans);$$ = physcalc::ans;}
-             | FNCT '(' exp ')'   { do_funct($1,$3,&physcalc::ans); $$ = physcalc::ans;}
-             | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,&physcalc::ans); $$ = physcalc::ans;}
+	| FNCT '(' ')' {do_funct($1,&PHYSCALC_ans); $$ = PHYSCALC_ans;}
+             | FNCT '(' VAR ')'   {  do_funct($1,$3,&PHYSCALC_ans);$$ = PHYSCALC_ans;}
+             | FNCT '(' exp ')'   { do_funct($1,$3,&PHYSCALC_ans); $$ = PHYSCALC_ans;}
+             | FNCT '(' VAR ',' VAR ')' { do_funct2($1, $3, $5,&PHYSCALC_ans); $$ = PHYSCALC_ans;}
              | exp '+' exp        { $$.re = $1.re + $3.re;$$.im = $1.im+$3.im;}
              | exp '-' exp        { $$.re = $1.re - $3.re;$$.im = $1.im-$3.im;}
              | exp '*' exp        { $$.re = $1.re * $3.re-$1.im*$3.im;$$.im = $1.re*$3.im+$1.im*$3.re;}
@@ -96,7 +93,7 @@ exp:          NUM                 { $$ = $1;yylval.val = $1;}
              | '-' exp  %prec NEG { $$.re = -$2.re;$$.im = -$2.im;         }
              | exp '^' exp        { $$.re = pow ($1.re, $3.re);$$.im=0; }
              | '(' exp ')'        { $$ = $2;                         }
-             | VAR '[' exp ',' exp ']' {handle_plane($1,$3.re,$5.re,&physcalc::ans);$$ = physcalc::ans;} 
+             | VAR '[' exp ',' exp ']' {handle_plane($1,$3.re,$5.re,&PHYSCALC_ans);$$ = PHYSCALC_ans;} 
             ;
      /* End of grammar.  */
 %%
@@ -201,3 +198,4 @@ symrec *
        printf ("%s: %s\n", s,yytext);
      }
      
+

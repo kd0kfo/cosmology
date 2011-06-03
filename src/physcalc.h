@@ -29,6 +29,8 @@
 #define PHYSCALC_H 1
 #include "symrec.h"
 
+extern struct calcval PHYSCALC_ans;
+
 extern const char* PROMPT_STRING;
 extern void yyrestart(FILE *);
 extern char* yytext;

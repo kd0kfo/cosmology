@@ -26,6 +26,7 @@
  */
 %{
 #include <stdlib.h>
+#include "physcalc.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
 
@@ -34,7 +35,7 @@
 #endif
 
 void yyerror(const char *);
-
+extern int PHYSCALC_is_interactive;
 
 %}
 
@@ -115,7 +116,7 @@ imagdecimal {decimal}[iI]
 
 int yywrap(void)
 {
-printf(">");
+if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);
 return 1;
 }
 

@@ -523,6 +523,7 @@ char *yytext;
  */
 #line 28 "physcalc.lex.lpp"
 #include <stdlib.h>
+#include "physcalc.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
 
@@ -531,9 +532,9 @@ char *yytext;
 #endif
 
 void yyerror(const char *);
+extern int PHYSCALC_is_interactive;
 
-
-#line 537 "physcalc.lex.cpp"
+#line 538 "physcalc.lex.cpp"
 
 #define INITIAL 0
 
@@ -720,9 +721,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 52 "physcalc.lex.lpp"
+#line 53 "physcalc.lex.lpp"
 
-#line 726 "physcalc.lex.cpp"
+#line 727 "physcalc.lex.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -807,42 +808,42 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 53 "physcalc.lex.lpp"
+#line 54 "physcalc.lex.lpp"
 return ANS;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 54 "physcalc.lex.lpp"
+#line 55 "physcalc.lex.lpp"
 return EXIT;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 55 "physcalc.lex.lpp"
+#line 56 "physcalc.lex.lpp"
 return EXIT;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 56 "physcalc.lex.lpp"
+#line 57 "physcalc.lex.lpp"
 return COPYRIGHT;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 57 "physcalc.lex.lpp"
+#line 58 "physcalc.lex.lpp"
 return HELP;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 58 "physcalc.lex.lpp"
+#line 59 "physcalc.lex.lpp"
 return IMAG;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 60 "physcalc.lex.lpp"
+#line 61 "physcalc.lex.lpp"
 {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 62 "physcalc.lex.lpp"
+#line 63 "physcalc.lex.lpp"
 {
            symrec* rec = getsym(yytext);
            if(rec == NULL)
@@ -853,12 +854,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 69 "physcalc.lex.lpp"
+#line 70 "physcalc.lex.lpp"
 { yylval.val.re = 0; yylval.val.im = 0;return NUM;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 71 "physcalc.lex.lpp"
+#line 72 "physcalc.lex.lpp"
 {
                   yylval.val.re = atof(yytext);yylval.val.im = 0;
                   return NUM;
@@ -866,7 +867,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 76 "physcalc.lex.lpp"
+#line 77 "physcalc.lex.lpp"
 {
                   yylval.val.im = atof(yytext);yylval.val.re = 0;
                   return NUM;
@@ -874,7 +875,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 81 "physcalc.lex.lpp"
+#line 82 "physcalc.lex.lpp"
 {
 	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
             return NUM;
@@ -882,7 +883,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 86 "physcalc.lex.lpp"
+#line 87 "physcalc.lex.lpp"
 {
 	    yylval.val.im  = atoi(yytext);yylval.val.re = 0.0;
             return NUM;
@@ -890,7 +891,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 91 "physcalc.lex.lpp"
+#line 92 "physcalc.lex.lpp"
 {
 	       unsigned int tmp;
 	       sscanf(yytext,"0x%x",&tmp);
@@ -901,7 +902,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 99 "physcalc.lex.lpp"
+#line 100 "physcalc.lex.lpp"
 {
 	       unsigned int tmp;
 	       sscanf(yytext,"0%o",&tmp);
@@ -912,26 +913,26 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 107 "physcalc.lex.lpp"
+#line 108 "physcalc.lex.lpp"
 {  return *yytext;  }
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 109 "physcalc.lex.lpp"
+#line 110 "physcalc.lex.lpp"
 ;//ignore whitespace
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 112 "physcalc.lex.lpp"
+#line 113 "physcalc.lex.lpp"
 yyerror("Unknown Character.");
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 114 "physcalc.lex.lpp"
+#line 115 "physcalc.lex.lpp"
 ECHO;
 	YY_BREAK
-#line 935 "physcalc.lex.cpp"
+#line 936 "physcalc.lex.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1929,13 +1930,13 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 114 "physcalc.lex.lpp"
+#line 115 "physcalc.lex.lpp"
 
 
 
 int yywrap(void)
 {
-printf(">");
+if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);
 return 1;
 }
 

@@ -40,7 +40,10 @@
 
 const char* PROMPT_STRING = ">";
 const char* program_name = "physcalc";
+struct calcval PHYSCALC_ans;
 extern int yyparse ();
+
+int PHYSCALC_is_interactive;
 
 struct init
 {
@@ -193,7 +196,8 @@ void handle_plane(symrec *rec,double& i, double& j, struct calcval *result)
 void print_complex(struct calcval cnumber)
 {
   using namespace std;
-  cout << "\tans: ";
+  if(PHYSCALC_is_interactive)
+    cout << "\tans: ";
   if(cnumber.im != 0)
     {
       math::Complex buff(cnumber.re,cnumber.im);
@@ -201,7 +205,9 @@ void print_complex(struct calcval cnumber)
     }
   else
     cout << cnumber.re;
-  cout <<   endl << ">";
+  if(PHYSCALC_is_interactive)
+    cout << endl << PROMPT_STRING;
+  
 }
 
 void do_funct(symrec* fnct,  struct calcval *result)
@@ -324,15 +330,8 @@ int main (int argc, char **argv)
   symrec *funct;
   FILE *input = NULL;
   int optflag;
-  print_copyright();
+  PHYSCALC_is_interactive = 0;
   init_table();
-
-  if(fseek(stdin,0,SEEK_END) != -1 && ftell(stdin) > 0)
-    {
-      rewind(stdin);
-      input = stdin;
-    }
-    
 
   while((optflag = getopt_long(argc,argv,short_opts,long_opts,NULL)) != -1)
     {
@@ -353,6 +352,7 @@ int main (int argc, char **argv)
 	    }
 	  break;
 	case 'h':default:
+	  print_copyright();
 	  print_help();
 	  exit(0);	  
 	}
@@ -360,15 +360,18 @@ int main (int argc, char **argv)
 
   if(input == NULL)
     {
+      print_copyright();
       printf("\n");
       printf("Welcome! To exit, type quit.\nALL statements must end with a semicolon.\n%s",PROMPT_STRING);
+      PHYSCALC_is_interactive = 1;
       yyparse();
       printf("Good bye.\n");
     }
   else
     {
       yyrestart(input);
-      yyparse();      
+      yyparse();
+      return PHYSCALC_ans.re;
     }
   return 0;
 }
