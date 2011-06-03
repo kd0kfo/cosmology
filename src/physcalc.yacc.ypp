@@ -31,7 +31,6 @@
 #include <string.h>
 #include <complex>
 #include <dirent.h>
-#include <getopt.h>
 #include "symrec.h"
 #include "functions.h"
 #include "physcalc.h"

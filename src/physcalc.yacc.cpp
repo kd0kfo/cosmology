@@ -75,7 +75,6 @@
 #include <string.h>
 #include <complex>
 #include <dirent.h>
-#include <getopt.h>
 #include "symrec.h"
 #include "functions.h"
 #include "physcalc.h"
@@ -96,7 +95,7 @@ namespace physcalc{
  
 
 /* Line 189 of yacc.c  */
-#line 100 "physcalc.yacc.cpp"
+#line 99 "physcalc.yacc.cpp"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -153,7 +152,7 @@ typedef union YYSTYPE
 {
 
 /* Line 214 of yacc.c  */
-#line 53 "physcalc.yacc.ypp"
+#line 52 "physcalc.yacc.ypp"
 
   struct calcval val;   /* For returning numbers.  */
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */
@@ -161,7 +160,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 165 "physcalc.yacc.cpp"
+#line 164 "physcalc.yacc.cpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -173,7 +172,7 @@ typedef union YYSTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 177 "physcalc.yacc.cpp"
+#line 176 "physcalc.yacc.cpp"
 
 #ifdef short
 # undef short
@@ -467,9 +466,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    69,    69,    70,    74,    75,    76,    77,    78,    79,
-      80,    83,    84,    85,    86,    87,    88,    89,    90,    91,
-      92,    93,    94,    95,    96,    97,    98,    99,   100
+       0,    68,    68,    69,    73,    74,    75,    76,    77,    78,
+      79,    82,    83,    84,    85,    86,    87,    88,    89,    90,
+      91,    92,    93,    94,    95,    96,    97,    98,    99
 };
 #endif
 
@@ -1412,175 +1411,175 @@ yyreduce:
         case 5:
 
 /* Line 1455 of yacc.c  */
-#line 75 "physcalc.yacc.ypp"
+#line 74 "physcalc.yacc.ypp"
     {print_copyright();printf(">");}
     break;
 
   case 6:
 
 /* Line 1455 of yacc.c  */
-#line 76 "physcalc.yacc.ypp"
+#line 75 "physcalc.yacc.ypp"
     {print_help((yyvsp[(3) - (5)].tptr)->name);printf(">");}
     break;
 
   case 7:
 
 /* Line 1455 of yacc.c  */
-#line 77 "physcalc.yacc.ypp"
+#line 76 "physcalc.yacc.ypp"
     {print_help(NULL);printf(">");}
     break;
 
   case 8:
 
 /* Line 1455 of yacc.c  */
-#line 78 "physcalc.yacc.ypp"
+#line 77 "physcalc.yacc.ypp"
     {YYACCEPT;}
     break;
 
   case 9:
 
 /* Line 1455 of yacc.c  */
-#line 79 "physcalc.yacc.ypp"
+#line 78 "physcalc.yacc.ypp"
     { print_complex((yyvsp[(1) - (2)].val)); physcalc::ans = (yyvsp[(1) - (2)].val);}
     break;
 
   case 10:
 
 /* Line 1455 of yacc.c  */
-#line 80 "physcalc.yacc.ypp"
+#line 79 "physcalc.yacc.ypp"
     { yyerrok;  printf("%s",PROMPT_STRING);         }
     break;
 
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 83 "physcalc.yacc.ypp"
+#line 82 "physcalc.yacc.ypp"
     { (yyval.val) = (yyvsp[(1) - (1)].val);yylval.val = (yyvsp[(1) - (1)].val);}
     break;
 
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 84 "physcalc.yacc.ypp"
+#line 83 "physcalc.yacc.ypp"
     { yylval.val.re = 0;yylval.val.im = (yyvsp[(1) - (2)].val).re;(yyval.val) = yylval.val;}
     break;
 
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 85 "physcalc.yacc.ypp"
+#line 84 "physcalc.yacc.ypp"
     { (yyval.val).re = (yyvsp[(1) - (1)].tptr)->value.var[0];(yyval.val).im = (yyvsp[(1) - (1)].tptr)->value.var[1];}
     break;
 
   case 14:
 
 /* Line 1455 of yacc.c  */
-#line 86 "physcalc.yacc.ypp"
+#line 85 "physcalc.yacc.ypp"
     { (yyval.val) = physcalc::ans;             }
     break;
 
   case 15:
 
 /* Line 1455 of yacc.c  */
-#line 87 "physcalc.yacc.ypp"
+#line 86 "physcalc.yacc.ypp"
     { (yyval.val) = (yyvsp[(3) - (3)].val); (yyvsp[(1) - (3)].tptr)->value.var[0] = (yyvsp[(3) - (3)].val).re;(yyvsp[(1) - (3)].tptr)->value.var[1]= (yyvsp[(3) - (3)].val).im; }
     break;
 
   case 16:
 
 /* Line 1455 of yacc.c  */
-#line 88 "physcalc.yacc.ypp"
+#line 87 "physcalc.yacc.ypp"
     {do_funct((yyvsp[(1) - (3)].tptr),&physcalc::ans); (yyval.val) = physcalc::ans;}
     break;
 
   case 17:
 
 /* Line 1455 of yacc.c  */
-#line 89 "physcalc.yacc.ypp"
+#line 88 "physcalc.yacc.ypp"
     {  do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].tptr),&physcalc::ans);(yyval.val) = physcalc::ans;}
     break;
 
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 90 "physcalc.yacc.ypp"
+#line 89 "physcalc.yacc.ypp"
     { do_funct((yyvsp[(1) - (4)].tptr),(yyvsp[(3) - (4)].val),&physcalc::ans); (yyval.val) = physcalc::ans;}
     break;
 
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 91 "physcalc.yacc.ypp"
+#line 90 "physcalc.yacc.ypp"
     { do_funct2((yyvsp[(1) - (6)].tptr), (yyvsp[(3) - (6)].tptr), (yyvsp[(5) - (6)].tptr),&physcalc::ans); (yyval.val) = physcalc::ans;}
     break;
 
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 92 "physcalc.yacc.ypp"
+#line 91 "physcalc.yacc.ypp"
     { (yyval.val).re = (yyvsp[(1) - (3)].val).re + (yyvsp[(3) - (3)].val).re;(yyval.val).im = (yyvsp[(1) - (3)].val).im+(yyvsp[(3) - (3)].val).im;}
     break;
 
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 93 "physcalc.yacc.ypp"
+#line 92 "physcalc.yacc.ypp"
     { (yyval.val).re = (yyvsp[(1) - (3)].val).re - (yyvsp[(3) - (3)].val).re;(yyval.val).im = (yyvsp[(1) - (3)].val).im-(yyvsp[(3) - (3)].val).im;}
     break;
 
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 94 "physcalc.yacc.ypp"
+#line 93 "physcalc.yacc.ypp"
     { (yyval.val).re = (yyvsp[(1) - (3)].val).re * (yyvsp[(3) - (3)].val).re-(yyvsp[(1) - (3)].val).im*(yyvsp[(3) - (3)].val).im;(yyval.val).im = (yyvsp[(1) - (3)].val).re*(yyvsp[(3) - (3)].val).im+(yyvsp[(1) - (3)].val).im*(yyvsp[(3) - (3)].val).re;}
     break;
 
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 95 "physcalc.yacc.ypp"
+#line 94 "physcalc.yacc.ypp"
     { (yyval.val).re = (yyvsp[(1) - (3)].val).re / (yyvsp[(3) - (3)].val).re; (yyval.val).im = (yyvsp[(1) - (3)].val).im/(yyvsp[(3) - (3)].val).re;}
     break;
 
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 96 "physcalc.yacc.ypp"
+#line 95 "physcalc.yacc.ypp"
     { (yyval.val).re = (int)(yyvsp[(1) - (3)].val).re % (int)(yyvsp[(3) - (3)].val).re;}
     break;
 
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 97 "physcalc.yacc.ypp"
+#line 96 "physcalc.yacc.ypp"
     { (yyval.val).re = -(yyvsp[(2) - (2)].val).re;(yyval.val).im = -(yyvsp[(2) - (2)].val).im;         }
     break;
 
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 98 "physcalc.yacc.ypp"
+#line 97 "physcalc.yacc.ypp"
     { (yyval.val).re = pow ((yyvsp[(1) - (3)].val).re, (yyvsp[(3) - (3)].val).re);(yyval.val).im=0; }
     break;
 
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 99 "physcalc.yacc.ypp"
+#line 98 "physcalc.yacc.ypp"
     { (yyval.val) = (yyvsp[(2) - (3)].val);                         }
     break;
 
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 100 "physcalc.yacc.ypp"
+#line 99 "physcalc.yacc.ypp"
     {handle_plane((yyvsp[(1) - (6)].tptr),(yyvsp[(3) - (6)].val).re,(yyvsp[(5) - (6)].val).re,&physcalc::ans);(yyval.val) = physcalc::ans;}
     break;
 
 
 
 /* Line 1455 of yacc.c  */
-#line 1584 "physcalc.yacc.cpp"
+#line 1583 "physcalc.yacc.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1792,7 +1791,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 103 "physcalc.yacc.ypp"
+#line 102 "physcalc.yacc.ypp"
 
 
 symrec *

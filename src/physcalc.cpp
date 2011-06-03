@@ -1,5 +1,34 @@
+/**
+ * 
+ * This file is part of physcalc, an interactive calculator utility
+ * designed to carry out lensing calculations and to manipulate plane
+ * data structures.
+ *
+ * This file contains parser code. It is meant to be used with
+ * yacc (specificly GNU bison). For an excellent "A Compact Guide
+ * to Lex & Yacc" by Tom Niemann" available at epaperpress.com. 
+ * Portions of source code from that paper are used here with 
+ * permission given in the Preface (page 3).
+ * 
+ * Copyright 2007, 2010 David Coss, PhD
+ *
+ * physcalc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * physcalc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <cstdio>
+#include <errno.h>
 #include <dirent.h>
+#include <getopt.h>
 #include "functions.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
@@ -10,7 +39,7 @@
 #endif
 
 const char* PROMPT_STRING = ">";
-
+const char* program_name = "physcalc";
 extern int yyparse ();
 
 struct init
@@ -247,23 +276,86 @@ void do_ls(const char *path)
 
 void print_copyright()
 {
-  printf("physcalc v%s  Copyright (C) 2010 David Coss, PhD\n",PACKAGE_VERSION);
+  printf("%s v%s  Copyright (C) 2010 David Coss, PhD\n",program_name,PACKAGE_VERSION);
   printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYING file distributed with this program.\n");
 }
 
+static const char short_opts[] = "c:f:ho:";
+struct option long_opts[] =
+  {
+    {"calc",1,NULL,'c'},
+    {"file",1,NULL,'f'},
+    {"help",0,NULL,'h'},
+    {NULL,0,NULL,0}
+  };
  
-int
-main (int argc, char **argv)
+void print_help()
+{
+  size_t curr = 0;
+  printf("\nUsage: ./%s [options]\n",program_name);
+  printf("\nOptions:\n\n");
+  while(long_opts[curr].name != NULL)
+    {
+      printf("--%s",long_opts[curr].name);
+      if(long_opts[curr].val >= 'a' && long_opts[curr].val <= 'z')
+	printf(", -%c",long_opts[curr].val);
+      printf("\t");
+      switch(long_opts[curr].val)
+	{
+	case 'c':
+	  printf("Calculate the specified expression");
+	  break;
+	case 'f':
+	  printf("Specify a file to be used as input");
+	  break;
+	case 'h':default:
+	  printf("Display this message");
+	  break;
+	}
+      printf("\n");
+      curr++;
+    }
+
+  std::cout << std::endl;
+}
+
+int main (int argc, char **argv)
 {
   symrec *funct;
   FILE *input = NULL;
+  int optflag;
   print_copyright();
-  init_table ();
-  if(argc > 1)
+  init_table();
+
+  if(fseek(stdin,0,SEEK_END) != -1 && ftell(stdin) > 0)
     {
-      input = fopen(argv[1],"r");
-      if(input != NULL)
-	yyrestart(input);
+      rewind(stdin);
+      input = stdin;
+    }
+    
+
+  while((optflag = getopt_long(argc,argv,short_opts,long_opts,NULL)) != -1)
+    {
+      switch(optflag)
+	{
+	case 'c':
+	  input = tmpfile();
+	  fputs(optarg,input);
+	  rewind(input);
+	  break;
+	case 'f':
+	  input = fopen(optarg,"r");
+	  if(input == NULL)
+	    {
+	      fprintf(stderr,"Could not open %s for reading.\n",optarg);
+	      fprintf(stderr,"Reason: %s\n",strerror(errno));
+	      exit(errno);
+	    }
+	  break;
+	case 'h':default:
+	  print_help();
+	  exit(0);	  
+	}
     }
 
   if(input == NULL)
@@ -275,6 +367,7 @@ main (int argc, char **argv)
     }
   else
     {
+      yyrestart(input);
       yyparse();      
     }
   return 0;
