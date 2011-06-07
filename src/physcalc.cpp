@@ -286,12 +286,16 @@ void print_copyright()
   printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYING file distributed with this program.\n");
 }
 
-static const char short_opts[] = "c:f:ho:";
+static const char short_opts[] = "c:f:h";
+enum{PHYSCALC_ARG_TAB_LONG,PHYSCALC_ARG_TAB_SHORT,PHYSCALC_ARG_TAB_ALL};
 struct option long_opts[] =
   {
     {"calc",1,NULL,'c'},
     {"file",1,NULL,'f'},
     {"help",0,NULL,'h'},
+    {"tab-long",0,NULL,PHYSCALC_ARG_TAB_LONG},
+    {"tab-short",0,NULL,PHYSCALC_ARG_TAB_SHORT},
+    {"tab-all",0,NULL,PHYSCALC_ARG_TAB_ALL},
     {NULL,0,NULL,0}
   };
  
@@ -314,8 +318,10 @@ void print_help()
 	case 'f':
 	  printf("Specify a file to be used as input");
 	  break;
-	case 'h':default:
+	case 'h':
 	  printf("Display this message");
+	  break;
+	default:
 	  break;
 	}
       printf("\n");
@@ -323,6 +329,24 @@ void print_help()
     }
 
   std::cout << std::endl;
+}
+
+void print_tab_complete(int short_or_long)
+{
+  struct option *the_opts = long_opts;
+  
+  while(the_opts != NULL && the_opts->name != NULL)
+    {
+      if(short_or_long == PHYSCALC_ARG_TAB_LONG)
+	printf("--%s ",the_opts->name);
+      else if(the_opts->val >= 'a' && the_opts->val <= 'z')
+	printf("-%c ",the_opts->val);
+
+      if(short_or_long == PHYSCALC_ARG_TAB_ALL)
+	printf("--%s ",the_opts->name);
+      
+      the_opts++;
+    }
 }
 
 int main (int argc, char **argv)
@@ -350,6 +374,10 @@ int main (int argc, char **argv)
 	      fprintf(stderr,"Reason: %s\n",strerror(errno));
 	      exit(errno);
 	    }
+	  break;
+	case PHYSCALC_ARG_TAB_LONG: case PHYSCALC_ARG_TAB_SHORT:case PHYSCALC_ARG_TAB_ALL:
+	  print_tab_complete(optflag);
+	  exit(0);
 	  break;
 	case 'h':default:
 	  print_copyright();
