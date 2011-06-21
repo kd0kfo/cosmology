@@ -353,9 +353,31 @@ int main (int argc, char **argv)
 {
   symrec *funct;
   FILE *input = NULL;
-  int optflag;
+  int optflag, weblength;
+  char *strweblength;
   PHYSCALC_is_interactive = 0;
   init_table();
+
+#ifdef WEB_USAGE
+  printf("Content-Type: text/plain;charset=us-ascii\n\n");
+  if((strweblength = getenv("CONTENT_LENGTH")) != NULL)
+    {
+      if(sscanf(strweblength,"%d",&weblength) == 1)
+	{
+	  char webbuff[(weblength + 1)*sizeof(char)];
+	  memset(webbuff,0,sizeof(char)*(weblength+1));
+	  input = tmpfile();
+	  if(input == NULL)
+	    {
+	      printf("Could not calculate.");
+	      exit(0);
+	    }
+	  fread(webbuff,sizeof(char),weblength,stdin);
+	  fwrite(webbuff,sizeof(char),weblength,input);
+	  rewind(input);
+	}
+    }
+#endif
 
   while((optflag = getopt_long(argc,argv,short_opts,long_opts,NULL)) != -1)
     {

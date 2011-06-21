@@ -2,13 +2,15 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(mycosmo, 2.7.0, david@davecoss.com)
+AC_INIT(mycosmo, 2.8.0, david@davecoss.com)
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 
 #templates
 AH_TEMPLATE([USE_MPI],[Define to compile with MPI.])
+AH_TEMPLATE([WITHOUT_FFT],[Define to not build with FFT])
+AH_TEMPLATE([WEB_USAGE],[Define to use out geared towards web usage])
 
 # Checks for programs.
 AC_PROG_CXX([mpic++ icc g++])
@@ -53,6 +55,21 @@ AC_ARG_WITH([fftw3],AS_HELP_STRING([--with-fftw3@<:@=dir@:>@],[Include fftw3 lib
 if test x$with_fftw3 != x; then
    AC_SUBST(FFTW3_PATH,$with_fftw3)
 fi
+if test x$with_fftw3 == xno;then
+   AC_DEFINE([WITHOUT_FFT],[1])
+   AC_MSG_RESULT(Building without FFT);
+fi
+AM_CONDITIONAL([BUILD_WITH_FFT],[test x$with_fftw3 != xno])
+
+#web conditions
+AC_ARG_ENABLE([web],AS_HELP_STRING([--enable-web],[Enable output conditions for web use (e.g. cgi). Default: disabled]),
+AC_DEFINE([WEB_USAGE],[1])
+AC_MSG_RESULT(Targeting output for web usage),)
+
+#static linking
+AC_ARG_ENABLE([static],AS_HELP_STRING([--enable-static],[Use static linking. Default: disabled]),AC_MSG_RESULT([Linking statically]),)
+AM_CONDITIONAL([LINK_STATICALLY],[test x$enable_static != xno])
+
 
 #mpi
 AC_ARG_WITH([mpi],AS_HELP_STRING([--with-mpi],[Includes the use of MPI.]),

@@ -41,6 +41,13 @@ bin_PROGRAMS = ray_trace_ellipse$(EXEEXT) flatten$(EXEEXT) \
 	physcalc$(EXEEXT) makecluster$(EXEEXT)
 #am__append_1 = mpi_utils.cpp
 #am__append_2 = -I${MPI_PATH}/include
+am__append_3 = -I${FFTW3_PATH}/include
+am__append_4 = -L${FFTW3_PATH}/lib
+am__append_5 = -lfftw3
+am__append_6 = -static
+am__append_7 = -static
+am__append_8 = -static
+am__append_9 = -static
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	physcalc.lex.cpp physcalc.yacc.cpp physcalc.yacc.h
@@ -70,7 +77,8 @@ am_physcalc_OBJECTS = physcalc-physcalc.yacc.$(OBJEXT) \
 	physcalc-physcalc.$(OBJEXT) physcalc-physcalc.lex.$(OBJEXT) \
 	physcalc-functions.$(OBJEXT)
 physcalc_OBJECTS = $(am_physcalc_OBJECTS)
-physcalc_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+physcalc_DEPENDENCIES = $(am__DEPENDENCIES_1)
 physcalc_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(physcalc_LDFLAGS) $(LDFLAGS) -o $@
 am__ray_trace_ellipse_SOURCES_DIST = ray_trace_ellipse.cpp \
@@ -129,7 +137,7 @@ ECHO_N = -n
 ECHO_T = 
 EGREP = /bin/grep -E
 EXEEXT = 
-FFTW3_PATH = /home/dcoss/opt/fftw
+FFTW3_PATH = 
 GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
@@ -152,15 +160,15 @@ OBJEXT = o
 PACKAGE = mycosmo
 PACKAGE_BUGREPORT = david@davecoss.com
 PACKAGE_NAME = mycosmo
-PACKAGE_STRING = mycosmo 2.6.1
+PACKAGE_STRING = mycosmo 2.8.0
 PACKAGE_TARNAME = mycosmo
 PACKAGE_URL = 
-PACKAGE_VERSION = 2.6.1
+PACKAGE_VERSION = 2.8.0
 PATH_SEPARATOR = :
 SET_MAKE = 
-SHELL = /bin/sh
+SHELL = /bin/bash
 STRIP = 
-VERSION = 2.6.1
+VERSION = 2.8.0
 YACC = bison -y
 YFLAGS = 
 abs_builddir = /home/dcoss/projects/mycosmo/src
@@ -209,20 +217,25 @@ top_srcdir = ..
 ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp $(am__append_1)
 ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/ \
 	-I$(LIBDNSTD_PATH)/include/ $(am__append_2)
-ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
+ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib \
+	-L${LIBDNSTD_PATH}/lib $(am__append_6)
 ray_trace_ellipse_LDADD = -lmygl -ldnstd
 flatten_SOURCES = flattenmain.cpp flatten.cpp
 flatten_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
+flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib \
+	$(am__append_7)
 flatten_LDADD = -lmygl -ldnstd
 AM_YFLAGS = -d
 physcalc_SOURCES = physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp
-physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ -I${FFTW3_PATH}/include
-physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib -L${FFTW3_PATH}/lib
-physcalc_LDADD = -lmygl -ldnstd -lfftw3 
+physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/ \
+	-I$(LIBDNSTD_PATH)/include/ $(am__append_3)
+physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib \
+	$(am__append_4) $(am__append_8)
+physcalc_LDADD = -lmygl -ldnstd $(am__append_5)
 makecluster_SOURCES = makecluster.cpp create_cluster.cpp
 makecluster_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-makecluster_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
+makecluster_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib \
+	$(am__append_9)
 makecluster_LDADD = -lmygl -ldnstd 
 all: all-am
 

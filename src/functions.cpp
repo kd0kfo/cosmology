@@ -25,11 +25,19 @@
  * You should have received a copy of the GNU General Public License
  * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string>
 #include <map>
 #include <iostream>
 #include <algorithm>
+
+#ifndef WITHOUT_FFT
 #include <fftw3.h>
+#endif
+
 #include "functions.h"
 #include "libmygl/plane.h"
 #include "libdnstd/Double.h"
@@ -110,6 +118,7 @@ symrec* multiply_planes(symrec** vars,size_t size)
 class DavidException;
 symrec* open_plane(symrec** vars,size_t size)
 {
+#ifndef WEB_USAGE
   if(vars == NULL || vars[0] == NULL || vars[1] == NULL || vars[1]->name == NULL || size != 2)
     return NULL;
   try{
@@ -120,11 +129,16 @@ symrec* open_plane(symrec** vars,size_t size)
     {
       de.stdErr();
     }
+#else
+  printf("Open does not work in web usage.\n");
+#endif
   return NULL;
+
 }
 
 symrec* save_plane(symrec** vars,size_t size)
 {
+#ifndef WEB_USAGE
   if(vars == NULL || vars[0] == NULL || !vars[0]->isPlane || vars[1] == NULL || vars[0]->name == NULL || size != 2)
     return NULL;
   try{
@@ -134,7 +148,11 @@ symrec* save_plane(symrec** vars,size_t size)
     {
       de.stdErr();
     }
+#else
+  printf("Save not allowed with web usage.\n");
+#endif
   return NULL;
+
 }
 
 symrec* copy_plane(symrec** vars, size_t size)
@@ -155,6 +173,7 @@ symrec* copy_plane(symrec** vars, size_t size)
 
 symrec* fourier_plane(symrec** vars, size_t size)
 {
+#ifndef WITHOUT_FFT
   if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
     return NULL;
   plane_t* plane = vars[0]->value.planeptr;
@@ -183,11 +202,15 @@ symrec* fourier_plane(symrec** vars, size_t size)
   fftw_destroy_plan(plan);
   fftw_free(data);
   delete nn;
+#else
+  printf("Not build with FFT.\n");
+#endif
   return NULL;
 }
 
 symrec* ifourier_plane(symrec** vars, size_t size)
 {
+#ifndef WITHOUT_FFT
   if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
     return NULL;
   plane_t* plane = vars[0]->value.planeptr;
@@ -217,5 +240,11 @@ symrec* ifourier_plane(symrec** vars, size_t size)
   fftw_destroy_plan(plan);
   fftw_free(data);
   delete nn;
+
+#else
+
+  printf("Not build with FFT.\n");
+#endif
+
   return NULL;
 }

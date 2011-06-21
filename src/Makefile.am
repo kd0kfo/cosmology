@@ -18,9 +18,9 @@ flatten_LDADD = -lmygl -ldnstd
 
 AM_YFLAGS = -d
 physcalc_SOURCES =  physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp
-physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ -I${FFTW3_PATH}/include
-physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib -L${FFTW3_PATH}/lib
-physcalc_LDADD = -lmygl -ldnstd -lfftw3 
+physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
+physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
+physcalc_LDADD = -lmygl -ldnstd 
 
 makecluster_SOURCES =  makecluster.cpp create_cluster.cpp
 makecluster_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
@@ -31,4 +31,17 @@ makecluster_LDADD = -lmygl -ldnstd
 if BUILD_WITH_MPI
 ray_trace_ellipse_SOURCES +=  mpi_utils.cpp
 ray_trace_ellipse_CPPFLAGS += -I${MPI_PATH}/include
+endif
+
+if BUILD_WITH_FFT
+physcalc_CPPFLAGS += -I${FFTW3_PATH}/include
+physcalc_LDFLAGS += -L${FFTW3_PATH}/lib
+physcalc_LDADD += -lfftw3
+endif
+
+if LINK_STATICALLY
+ray_trace_ellipse_LDFLAGS += -static
+flatten_LDFLAGS += -static
+physcalc_LDFLAGS += -static
+makecluster_LDFLAGS += -static
 endif
