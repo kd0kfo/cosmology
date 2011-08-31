@@ -46,8 +46,9 @@
      EXIT = 262,
      COPYRIGHT = 263,
      HELP = 264,
-     ANS = 265,
-     NEG = 266
+     RADIX = 265,
+     ANS = 266,
+     NEG = 267
    };
 #endif
 /* Tokens.  */
@@ -58,8 +59,9 @@
 #define EXIT 262
 #define COPYRIGHT 263
 #define HELP 264
-#define ANS 265
-#define NEG 266
+#define RADIX 265
+#define ANS 266
+#define NEG 267
 
 
 
@@ -69,7 +71,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 49 "physcalc.yacc.ypp"
+#line 53 "physcalc.yacc.ypp"
 
   struct calcval val;   /* For returning numbers.  */
   struct symrec  *tptr;   /* For returning symbol-table pointers.  */
@@ -77,7 +79,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 81 "physcalc.yacc.h"
+#line 83 "physcalc.yacc.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

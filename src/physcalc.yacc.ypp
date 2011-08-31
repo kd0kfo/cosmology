@@ -44,7 +44,11 @@
   extern char* yytext;
   void yyerror (char const *);
   extern int PHYSCALC_is_interactive;
-
+  const char *radices[] = {"%d","0x%X","0%o"};
+  size_t curr_radix = 0;
+ const char *set_radix(const char *name);
+ const char *show_radix();
+ const char *get_radix();
  %}
 %union {
   struct calcval val;   /* For returning numbers.  */
@@ -52,7 +56,7 @@
 }
 %token <val>  NUM        /* Simple double precision number.  */
 %token <tptr> VAR FNCT 
-%token IMAG EXIT COPYRIGHT HELP
+%token IMAG EXIT COPYRIGHT HELP RADIX
 %type  <val>  exp
 %left ANS
 %right '='
@@ -70,6 +74,8 @@ input:   input stmt
                ';'
        	       | COPYRIGHT ';' {print_copyright();if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | HELP '(' FNCT ')' ';' {print_help($3->name);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
+               | RADIX '(' VAR ')' ';' {set_radix($3->name);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
+               | RADIX '(' ')' ';' {printf("%s\n",show_radix());if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | HELP ';' {print_help(NULL);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | EXIT ';' {YYACCEPT;}
                | exp ';'   { print_complex($1); PHYSCALC_ans = $1;}
@@ -197,5 +203,38 @@ symrec *
      {
        printf ("%s: %s\n", s,yytext);
      }
+
+const char *set_radix(const char *name)
+{
+  if(name == NULL)
+    return radices[curr_radix];
+  if(strncmp(name,"dec",strlen("dec")) == 0)
+    return radices[curr_radix = 0];
+  if(strncmp(name,"hex",strlen("hex")) == 0)
+    return radices[curr_radix = 1];
+  if(strncmp(name,"oct",strlen("oct")) == 0)
+    return radices[curr_radix = 2];
+  return radices[curr_radix];
+}
+
+const char *get_radix(){return radices[curr_radix];}
+
+const char *show_radix()
+{
+  switch(curr_radix)
+    {
+    case 0:
+      return "dec";
+    case 1:
+      return "hex";
+    case 2:
+      return "oct";
+    default:
+      curr_radix = 0;
+      break;
+    }
+  return "dec";
+}
+
      
 

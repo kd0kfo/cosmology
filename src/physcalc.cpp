@@ -25,10 +25,6 @@
  * You should have received a copy of the GNU General Public License
  * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <cstdio>
-#include <errno.h>
-#include <dirent.h>
-#include <getopt.h>
 #include "functions.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
@@ -38,10 +34,17 @@
 #include "config.h"
 #endif
 
+#include <cstdio>
+#include <errno.h>
+#include <dirent.h>
+#include <getopt.h>
+#include <cmath>
+
 const char* PROMPT_STRING = ">";
 const char* program_name = "physcalc";
 struct calcval PHYSCALC_ans;
 extern int yyparse ();
+extern char *get_radix();
 
 int PHYSCALC_is_interactive;
 
@@ -195,18 +198,22 @@ void handle_plane(symrec *rec,double& i, double& j, struct calcval *result)
 
 void print_complex(struct calcval cnumber)
 {
-  using namespace std;
+  double intpart = 1;
   if(PHYSCALC_is_interactive)
-    cout << "\tans: ";
+    printf("\tans: ");
   if(cnumber.im != 0)
     {
       math::Complex buff(cnumber.re,cnumber.im);
-      cout << buff;
+      printf("C %s",buff.str().c_str());
     }
+  else if(modf(cnumber.re,&intpart) == 0)
+    printf(get_radix(),(int)cnumber.re);
   else
-    cout << cnumber.re;
+    printf("%f",cnumber.re);
+  
   if(PHYSCALC_is_interactive)
-    cout << endl << PROMPT_STRING;
+    printf("\n%s",PROMPT_STRING);
+  fflush(stdout);
   
 }
 

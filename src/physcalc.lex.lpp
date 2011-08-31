@@ -51,6 +51,7 @@ imagint {integer}[iI]
 imagdecimal {decimal}[iI]
 
 %% 
+"radix" return RADIX;
 "ans"  return ANS;
 "exit" return EXIT;
 "quit" return EXIT;
