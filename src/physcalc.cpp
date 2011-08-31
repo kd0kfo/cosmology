@@ -122,6 +122,7 @@ init_table (void)
   ptr = putsym("copy",FNCT);ptr->plane_fnctptr = copy_plane;ptr->isPlaneFunction = true;
   ptr = putsym("fourier",FNCT);ptr->plane_fnctptr = fourier_plane;ptr->isPlaneFunction = true;
   ptr = putsym("ifourier",FNCT);ptr->plane_fnctptr = ifourier_plane;ptr->isPlaneFunction = true;
+  ptr = putsym("ifourier",FNCT);ptr->plane_fnctptr = ifourier_plane;ptr->isPlaneFunction = true;
 }
     
 
@@ -250,6 +251,8 @@ void print_help(const char *keyword)
     printf("fourier -- fourier transforms a plane. Performed in place.\nUsage: fourier(A)\n\t\tA <- F(A)\n");
   if(keyword == NULL || strcmp(keyword,"ifourier") == 0)
     printf("ifourier -- inverse fourier transforms a plane. Performed in place.\nUsage: ifourier(A)\n\t\tA <- F^-1 (A)\n");
+  if(keyword == NULL || strcmp(keyword,"radix") == 0)
+    printf("radix -- set or print the current radix being used for display. Does not affect input.\nOptions: dec, oct, hex\n");
   if(keyword == NULL)
     {
       printf("\nThe following standard functions are also included:\n"); 
@@ -289,11 +292,11 @@ void do_ls(const char *path)
 
 void print_copyright()
 {
-  printf("%s v%s  Copyright (C) 2010 David Coss, PhD\n",program_name,PACKAGE_VERSION);
-  printf("This program comes with ABSOLUTELY NO WARRANTY; for details visit http://www.gnu.org/licenses/gpl-2.0.html or read the COPYING file distributed with this program.\n");
+  printf("%s v%s  Copyright (C) 2011 David Coss, PhD\n",program_name,PACKAGE_VERSION);
+  printf("This program comes with ABSOLUTELY NO WARRANTY. Use and redistribution rights are granted under the terms of the GNU General Public License; for details visit http://www.gnu.org/copyleft/gpl.html or read the COPYING file distributed with this program.\n");
 }
 
-static const char short_opts[] = "c:f:h";
+static const char short_opts[] = "c:f:hv";
 enum{PHYSCALC_ARG_TAB_LONG,PHYSCALC_ARG_TAB_SHORT,PHYSCALC_ARG_TAB_ALL};
 struct option long_opts[] =
   {
@@ -303,6 +306,7 @@ struct option long_opts[] =
     {"tab-long",0,NULL,PHYSCALC_ARG_TAB_LONG},
     {"tab-short",0,NULL,PHYSCALC_ARG_TAB_SHORT},
     {"tab-all",0,NULL,PHYSCALC_ARG_TAB_ALL},
+    {"version",0,NULL,'v'},
     {NULL,0,NULL,0}
   };
  
@@ -408,6 +412,9 @@ int main (int argc, char **argv)
 	  print_tab_complete(optflag);
 	  exit(0);
 	  break;
+	case 'v':
+	  print_copyright();
+	  exit(0);
 	case 'h':default:
 	  print_copyright();
 	  print_help();

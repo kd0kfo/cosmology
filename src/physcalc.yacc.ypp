@@ -74,6 +74,7 @@ input:   input stmt
                ';'
        	       | COPYRIGHT ';' {print_copyright();if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | HELP '(' FNCT ')' ';' {print_help($3->name);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
+               | HELP '(' RADIX ')' ';' {print_help("radix");if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | RADIX '(' VAR ')' ';' {set_radix($3->name);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | RADIX '(' ')' ';' {printf("%s\n",show_radix());if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
                | HELP ';' {print_help(NULL);if(PHYSCALC_is_interactive)printf("%s",PROMPT_STRING);}
