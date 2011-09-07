@@ -25,10 +25,10 @@
  * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
  */
 %{
-#include <stdlib.h>
 #include "physcalc.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
+#include <stdlib.h>
 
 #ifndef M_PI
 #define M_PI 3.1415926
@@ -45,6 +45,8 @@ nonnegative [0-9]
 integer [1-9]{nonnegative}*
 exponent [eE][+-]{nonnegative}*
 decimal {zero}?{integer}*\.{nonnegative}*{exponent}?
+alpha [a-zA-Z]
+variable {alpha}({nonnegative}|{alpha}|[_])*
 hex 0x[0-9a-fA-F]*
 octal 0[0-9a-fA-F]*
 imagint {integer}[iI]
@@ -61,7 +63,7 @@ imagdecimal {decimal}[iI]
 
 "pi" {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
 
-[a-zA-Z][a-zA-Z0-9\.]*  {
+{variable}  {
            symrec* rec = getsym(yytext);
            if(rec == NULL)
                rec = putsym(yytext,VAR);

@@ -70,17 +70,17 @@
 /* Line 189 of yacc.c  */
 #line 28 "physcalc.yacc.ypp"
 
-#include <math.h>  /* For math functions, cos(), sin(), etc.  */
-#include <stdio.h>
-#include <string.h>
-#include <complex>
-#include <dirent.h>
 #include "symrec.h"
 #include "functions.h"
 #include "physcalc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <math.h>  /* For math functions, cos(), sin(), etc.  */
+#include <stdio.h>
+#include <string.h>
+#include <complex>
+#include <dirent.h>
 
   class DavidException;
   int yylex (void);
