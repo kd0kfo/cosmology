@@ -44,7 +44,7 @@
   extern char* yytext;
   void yyerror (char const *);
   extern int PHYSCALC_is_interactive;
-  const char *radices[] = {"%d","0x%X","0%o"};
+  const char *radices[] = {"%ld","0x%X","0%o"};
   size_t curr_radix = 0;
  const char *set_radix(const char *name);
  const char *show_radix();

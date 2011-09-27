@@ -43,14 +43,14 @@ whitespace [ \t\n]+
 zero 0
 nonnegative [0-9]
 integer [1-9]{nonnegative}*
+imagint {integer}?[iI]
+imagdecimal {decimal}?[iI]
 exponent [eE][+-]{nonnegative}*
-decimal {zero}?{integer}*\.{nonnegative}*{exponent}?
+decimal {zero}?{integer}*\.?{nonnegative}*{exponent}?
 alpha [a-zA-Z]
 variable {alpha}({nonnegative}|{alpha}|[_])*
 hex 0x[0-9a-fA-F]*
 octal 0[0-9a-fA-F]*
-imagint {integer}[iI]
-imagdecimal {decimal}[iI]
 
 %% 
 "radix" return RADIX;
@@ -59,12 +59,18 @@ imagdecimal {decimal}[iI]
 "quit" return EXIT;
 "copyright" return COPYRIGHT;
 "help" return HELP;
-"i" return IMAG;
+
 
 "pi" {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
 
 {variable}  {
-           symrec* rec = getsym(yytext);
+  symrec* rec = NULL;
+  if(strcmp(yytext,"i") == 0)
+    {
+      yylval.val.re = 0; yylval.val.im = 1;
+      return NUM;
+    }
+  rec = getsym(yytext);
            if(rec == NULL)
                rec = putsym(yytext,VAR);
            yylval.tptr = rec;
@@ -78,7 +84,7 @@ imagdecimal {decimal}[iI]
               }
 
 {imagdecimal} {
-                  yylval.val.im = atof(yytext);yylval.val.re = 0;
+  yylval.val.im = atof(yytext);yylval.val.re = 0;
                   return NUM;
               }
 

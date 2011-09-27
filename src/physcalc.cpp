@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <getopt.h>
+#include <limits.h>
 #include <cmath>
 
 const char* PROMPT_STRING = ">";
@@ -199,7 +200,8 @@ void handle_plane(symrec *rec,double& i, double& j, struct calcval *result)
 
 void print_complex(struct calcval cnumber)
 {
-  double intpart = 1;
+  double intpart = 1, absval = fabs(cnumber.re);
+  
   if(PHYSCALC_is_interactive)
     printf("\tans: ");
   if(cnumber.im != 0)
@@ -207,8 +209,10 @@ void print_complex(struct calcval cnumber)
       math::Complex buff(cnumber.re,cnumber.im);
       printf("C %s",buff.str().c_str());
     }
-  else if(modf(cnumber.re,&intpart) == 0)
-    printf(get_radix(),(int)cnumber.re);
+  else if(modf(cnumber.re,&intpart) == 0 && absval < 1.0e+9)
+    printf(get_radix(),(long int)cnumber.re);
+  else if(absval > 1.0e+9)
+    printf("%e",cnumber.re);
   else
     printf("%f",cnumber.re);
   
