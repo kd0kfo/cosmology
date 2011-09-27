@@ -207,7 +207,7 @@ void print_complex(struct calcval cnumber)
   if(cnumber.im != 0)
     {
       math::Complex buff(cnumber.re,cnumber.im);
-      printf("C %s",buff.str().c_str());
+      printf("%s",buff.str().c_str());
     }
   else if(modf(cnumber.re,&intpart) == 0 && absval < 1.0e+9)
     printf(get_radix(),(long int)cnumber.re);
