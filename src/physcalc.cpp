@@ -211,7 +211,7 @@ void print_complex(struct calcval cnumber)
     }
   else if(modf(cnumber.re,&intpart) == 0 && absval < 1.0e+9)
     printf(get_radix(),(long int)cnumber.re);
-  else if(absval > 1.0e+9)
+  else if(absval > 1.0e+9 || absval < 1.0e-5)
     printf("%e",cnumber.re);
   else
     printf("%f",cnumber.re);
