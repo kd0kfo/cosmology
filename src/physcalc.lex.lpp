@@ -42,11 +42,11 @@ extern int PHYSCALC_is_interactive;
 whitespace [ \t\n]+
 zero 0
 nonnegative [0-9]
-integer [1-9]{nonnegative}*
+exponent [eE][+-]{nonnegative}*
+integer [1-9]{nonnegative}*{exponent}?
 imagint {integer}?[iI]
 imagdecimal {decimal}?[iI]
-exponent [eE][+-]{nonnegative}*
-decimal {zero}?{integer}*\.?{nonnegative}*{exponent}?
+decimal {zero}?{integer}*\.{nonnegative}*{exponent}?
 alpha [a-zA-Z]
 variable {alpha}({nonnegative}|{alpha}|[_])*
 hex 0x[0-9a-fA-F]*
@@ -89,12 +89,12 @@ octal 0[0-9a-fA-F]*
               }
 
 {integer}    {
-	yylval.val.re  = atoi(yytext);yylval.val.im = 0.0;
+	yylval.val.re  = atof(yytext);yylval.val.im = 0.0;
             return NUM;
           }
 
 {imagint}    {
-	    yylval.val.im  = atoi(yytext);yylval.val.re = 0.0;
+	    yylval.val.im  = atof(yytext);yylval.val.re = 0.0;
             return NUM;
            }
 
