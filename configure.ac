@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(mycosmo, 2.9.4, david@davecoss.com)
+AC_INIT(mycosmo, 2.9.5, david@davecoss.com)
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
@@ -13,8 +13,8 @@ AH_TEMPLATE([WITHOUT_FFT],[Define to not build with FFT])
 AH_TEMPLATE([WEB_USAGE],[Define to use out geared towards web usage])
 
 # Checks for programs.
-AC_PROG_CXX([mpic++ icc g++])
-AC_PROG_CC([mpicc icc gcc])
+AC_PROG_CXX([mpic++])
+AC_PROG_CC([mpicc])
 AC_PROG_YACC
 AC_PROG_LEX
 
