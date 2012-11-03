@@ -96,5 +96,6 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([alarm floor pow sqrt strerror])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+		 test/Makefile])
 AC_OUTPUT
