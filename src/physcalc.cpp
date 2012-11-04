@@ -123,7 +123,6 @@ init_table (void)
   ptr = putsym("copy",FNCT);ptr->plane_fnctptr = copy_plane;ptr->isPlaneFunction = true;
   ptr = putsym("fourier",FNCT);ptr->plane_fnctptr = fourier_plane;ptr->isPlaneFunction = true;
   ptr = putsym("ifourier",FNCT);ptr->plane_fnctptr = ifourier_plane;ptr->isPlaneFunction = true;
-  ptr = putsym("ifourier",FNCT);ptr->plane_fnctptr = ifourier_plane;ptr->isPlaneFunction = true;
 }
     
 
