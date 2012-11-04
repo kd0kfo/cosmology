@@ -142,7 +142,7 @@ symrec* save_plane(symrec** vars,size_t size)
   if(vars == NULL || vars[0] == NULL || !vars[0]->isPlane || vars[1] == NULL || vars[0]->name == NULL || size != 2)
     return NULL;
   try{
-    vars[0]->value.planeptr->savePlane(vars[1]->name);
+    vars[0]->value.planeptr->savePlane(vars[1]->name,true);
   }
   catch(DavidException de)
     {
