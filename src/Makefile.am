@@ -6,9 +6,9 @@
 bin_PROGRAMS = ray_trace_ellipse flatten  physcalc makecluster
 
 ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
-ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
-ray_trace_ellipse_LDADD = -lmygl -ldnstd
+ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
+ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
+ray_trace_ellipse_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 
 
 flatten_SOURCES =  flattenmain.cpp flatten.cpp
