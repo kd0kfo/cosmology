@@ -27,6 +27,8 @@ This software suite requires two libraries that I developed in parallel to this 
 
 * libmygl is a C++ library that provides subroutines and classes to carry out gravitational lensing simulations. This library is located at https://github.com/kd0kfo/libmygl.git.
 
+Additionally, as of version 2.10, this software stored Planes as NetCDF files. This is freely available here: http://www.unidata.ucar.edu/software/netcdf/
+
 Citation
 ---------
 
