@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(mycosmo, 2.10, david@davecoss.com)
+AC_INIT(mycosmo, 2.10.1, david@davecoss.com)
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE

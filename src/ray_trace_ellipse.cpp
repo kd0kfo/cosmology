@@ -269,7 +269,7 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane
       const std::string& deflectionFilename = args->lensMassDeflectionPlane;
 	  
       verbosePrint(args,"Parsing Deflection Plane: %s\n",deflectionFilename.c_str());
-      deflectionPlane = Plane<math::Complex>::readPlane(deflectionFilename);
+      deflectionPlane = Plane<math::Complex>::loadCDF(deflectionFilename);
       gl = GLAlgorithm(deflectionPlane,&params,&sourceParams,sources);
     }
   if(args->createDeflection)
@@ -292,10 +292,10 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane
 	  // Merge sub-sets of the plane
 	  utils::mpi_recombine(gl,lens_group);
 	  if(mpi_data.rank == utils::MASTER_RANK)
-	    gl.getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
+	    gl.getDeflectionPlane()->writeCDF(args->lensMassDeflectionPlane);
 
 #else
-	  gl.getDeflectionPlane()->savePlane(args->lensMassDeflectionPlane);
+	  gl.getDeflectionPlane()->writeCDF(args->lensMassDeflectionPlane);
 #endif
 	}
 #ifdef USE_MPI
@@ -376,9 +376,9 @@ int simulation(struct ray_trace_arguments *args,Plane<Double> **lens_addr, Plane
 #ifdef USE_MPI
 	  utils::mpi_recombine(sourceLocations,MPI_COMM_WORLD);
 	  if(mpi_data.rank == utils::MASTER_RANK)
-	    sourceLocations->savePlane(args->savesourcelocations);
+	    sourceLocations->writeCDF(args->savesourcelocations);
 #else
-	  sourceLocations->savePlane(args->savesourcelocations);
+	  sourceLocations->writeCDF(args->savesourcelocations);
 #endif
 	}
     }//end if(runsim)
@@ -479,7 +479,7 @@ bool writeParameters(const struct ray_trace_arguments *args,
     throw DavidException("writeParameters: Need arguments. Got null pointer",DavidException::NULL_POINTER);
 
   static const string fullFileName = args->fileNamePrefix+"human-parameters.txt";
-  static const string fullFileName2 = args->fileNamePrefix+"parameters.txt";
+  static const string fullFileName2 = args->fileNamePrefix+"parameters.xml";
   ofstream outfile(fullFileName.c_str());
   XMLParser xmldoc;
   XMLNode *xml = new XMLNode("parameters");
@@ -498,19 +498,19 @@ bool writeParameters(const struct ray_trace_arguments *args,
       buff.clear();buff << params.ndim;
       xmlparams->insertChild("ndim",buff.str());
       outfile << "Arc length per pixel: " << params.arcsec_per_pixel << endl;
-      buff.clear();buff << params.arcsec_per_pixel ;
+      buff.str("");buff.clear();buff << params.arcsec_per_pixel ;
       xmlparams->insertChild("arcsec_per_pixel",buff.str());
       outfile << "Value of Newton's Constant: " << params.G << endl;
-      buff.clear();buff << params.G ;
+      buff.str("");buff.clear();buff << params.G ;
       xmlparams->insertChild("G",buff.str());
       outfile << "Solar mass: " << params.G << endl;
-      buff.clear();buff << params.G ;
+      buff.str("");buff.clear();buff << params.G ;
       xmlparams->insertChild("G",buff.str());
       outfile << "Distance Scale: " << params.distance_scale << endl;
-      buff.clear();buff << params.distance_scale ;
+      buff.str("");buff.clear();buff << params.distance_scale ;
       xmlparams->insertChild("distance_scale",buff.str());
       outfile << "Speed of Light" << params.c << endl;
-      buff.clear();buff << params.c ;
+      buff.str("");buff.clear();buff << params.c ;
       xmlparams->insertChild("c",buff.str());
       outfile << "Critical Curves included: ";
       if(params.showCriticalCurves)
@@ -532,28 +532,28 @@ bool writeParameters(const struct ray_trace_arguments *args,
     {
       outfile << "Lens Parameters:" << endl;
       outfile << "x coordinate of lens center: " << lensParams.xcenter << endl;
-      buff.clear();buff << lensParams.xcenter ;
+      buff.str("");buff.clear();buff << lensParams.xcenter ;
       xmllens->insertChild("xcenter",buff.str());
       outfile << "y coordinate of lens center: " << lensParams.ycenter << endl;
-      buff.clear();buff << lensParams.ycenter ;
+      buff.str("");buff.clear();buff << lensParams.ycenter ;
       xmllens->insertChild("ycenter",buff.str());
       outfile << "lens redshift or distance: " << lensParams.redshift << endl;
-      buff.clear();buff << lensParams.redshift ;
+      buff.str("");buff.clear();buff << lensParams.redshift ;
       xmllens->insertChild("redshift",buff.str());
       outfile << "lens velocity of dispersion: " << lensParams.velocity_dispersion << endl;
-      buff.clear();buff << lensParams.velocity_dispersion ;
+      buff.str("");buff.clear();buff << lensParams.velocity_dispersion ;
       xmllens->insertChild("velocity_dispersion",buff.str());
       outfile << "mass density (optional): " << lensParams.mass_density << endl;
-      buff.clear();buff << lensParams.mass_density;
+      buff.str("");buff.clear();buff << lensParams.mass_density;
       xmllens->insertChild("mass_density",buff.str());
       outfile << "Shear: " << lensParams.shear << endl;
-      buff.clear();buff << lensParams.shear;
+      buff.str("");buff.clear();buff << lensParams.shear;
       xmllens->insertChild("shear",buff.str());
       outfile << "Semi-major axis length: " << lensParams.semimajor_length << endl;
-      buff.clear();buff << lensParams.semimajor_length;
+      buff.str("");buff.clear();buff << lensParams.semimajor_length;
       xmllens->insertChild("semimajor_length",buff.str());
       outfile << "Eccentricity(e=1-b/a): " << lensParams.eccentricity << endl;
-      buff.clear();buff << lensParams.eccentricity;
+      buff.str("");buff.clear();buff << lensParams.eccentricity;
       xmllens->insertChild("eccentricity",buff.str());
       outfile << endl;
     }
@@ -566,25 +566,25 @@ bool writeParameters(const struct ray_trace_arguments *args,
       outfile << "Source Parameters:" << endl;
       xml->insertChild(xmlsourceParams);
       outfile << "x coordinate of source center: " << sourceParams.xcenter << endl;
-      buff.clear();buff << sourceParams.xcenter;
+      buff.str("");buff.clear();buff << sourceParams.xcenter;
       xmlsourceParams->insertChild("xcenter",buff.str());
       outfile << "y coordinate of source center: " << sourceParams.ycenter << endl;
-      buff.clear();buff << sourceParams.ycenter;
+      buff.str("");buff.clear();buff << sourceParams.ycenter;
       xmlsourceParams->insertChild("ycenter",buff.str());
       outfile << "source redshift or distance: " << sourceParams.redshift << endl;
-      buff.clear();buff << sourceParams.redshift;
+      buff.str("");buff.clear();buff << sourceParams.redshift;
       xmlsourceParams->insertChild("redshift",buff.str());
       outfile << "semimajor axis length in arcseconds: " << sourceParams.semimajor_length << endl;
-      buff.clear();buff << sourceParams.semimajor_length;
+      buff.str("");buff.clear();buff << sourceParams.semimajor_length;
       xmlsourceParams->insertChild("semimajor_length",buff.str());
       outfile << "source eccentricity: " << sourceParams.eccentricity << endl;
-      buff.clear();buff << sourceParams.eccentricity;
+      buff.str("");buff.clear();buff << sourceParams.eccentricity;
       xmlsourceParams->insertChild("eccentricity",buff.str());
       outfile << "orientation of source semimajor axis in radians: " << sourceParams.orientation << endl;
-      buff.clear();buff << sourceParams.orientation;
+      buff.str("");buff.clear();buff << sourceParams.orientation;
       xmlsourceParams->insertChild("orientation",buff.str());
       outfile << "Source flux: " << sourceParams.flux << endl;
-      buff.clear();buff << sourceParams.flux;
+      buff.str("");buff.clear();buff << sourceParams.flux;
       xmlsourceParams->insertChild("flux",buff.str());
       outfile << endl;
     }
@@ -673,8 +673,8 @@ int planes_op(char *csv_names,const char op)
   
   Plane<Double> *lhs = NULL, *rhs = NULL, *result = NULL;
   try{
-    lhs = Plane<Double>::readPlane(lhs_name);
-    rhs = Plane<Double>::readPlane(rhs_name);
+    lhs = Plane<Double>::loadCDF(lhs_name);
+    rhs = Plane<Double>::loadCDF(rhs_name);
     switch(op)
       {
       case '+':
@@ -690,7 +690,7 @@ int planes_op(char *csv_names,const char op)
 	}
       }
     if(result != NULL)
-      result->savePlane(result_name);
+      result->writeCDF(result_name);
     else
       throw DavidException("planes_op: Result was NULL.",DavidException::DATA_FORMAT_ERROR);
   }
@@ -802,7 +802,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  args->makeMassDensity = optarg;
 	  break;
 	case 'm':
-	  args->lensMassDensity = Plane<Double>::readPlane(optarg);
+	  args->lensMassDensity = Plane<Double>::loadCDF(optarg);
 	  break;
 	case 't':
 	  args->useTimeStamp = true;
@@ -1116,7 +1116,7 @@ void createSurfaceMassDensity(const std::string& fileName, struct ray_trace_argu
   DensityProfile * profile = new DensityProfile(&dummy,&lensParams,&params);
 
   profile->drawPlane();
-  profile->getPlane()->savePlane(fileName);
+  profile->getPlane()->writeCDF(fileName);
 
   delete profile;
   delete dummy;
@@ -1152,7 +1152,7 @@ void squarePlane(const char * fileName)
   static const Complex cZero(0.0,0.0);
 
   Plane<Complex> * oldPlane = new Plane<Complex>(0,0,cZero);
-  oldPlane = Plane<Complex>::readPlane(fileName);
+  oldPlane = Plane<Complex>::loadCDF(fileName);
 
   int width,height;
 
@@ -1170,7 +1170,7 @@ void squarePlane(const char * fileName)
 	newPlane->setValue(i,j,curr);
       }
 
-  newPlane->savePlane(fileName);
+  newPlane->writeCDF(fileName);
 
   delete oldPlane;
   delete newPlane;
