@@ -12,20 +12,20 @@ ray_trace_ellipse_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 
 
 flatten_SOURCES =  flattenmain.cpp flatten.cpp
-flatten_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
-flatten_LDADD = -lmygl -ldnstd
+flatten_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
+flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
+flatten_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 
 AM_YFLAGS = -d
 physcalc_SOURCES =  physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp
-physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
-physcalc_LDADD = -lmygl -ldnstd 
+physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
+physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
+physcalc_LDADD = -lmygl -ldnstd  $(NETCDF_LDADD)
 
 makecluster_SOURCES =  makecluster.cpp create_cluster.cpp
-makecluster_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/
-makecluster_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib
-makecluster_LDADD = -lmygl -ldnstd 
+makecluster_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
+makecluster_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
+makecluster_LDADD = -lmygl -ldnstd  $(NETCDF_LDADD)
 
 
 if BUILD_WITH_MPI

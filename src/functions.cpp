@@ -54,7 +54,7 @@ symrec* print_plane(symrec** vars, size_t size)
   if(vars == NULL || *vars == NULL || !vars[0]->isPlane)
     return NULL;
   const plane_t* plane = vars[0]->value.planeptr;
-  printf("dim: %d by %d\n",plane->numberOfRows(), plane->numberOfColumns());
+  printf("dim: %lu by %lu\n",plane->numberOfRows(), plane->numberOfColumns());
   cout << "max: " << plane->getMaxValue() << "   min: " << plane->getMinValue() << "   sum: " << plane->getTotalValue() << endl;
   return NULL;
 }
@@ -122,7 +122,7 @@ symrec* open_plane(symrec** vars,size_t size)
   if(vars == NULL || vars[0] == NULL || vars[1] == NULL || vars[1]->name == NULL || size != 2)
     return NULL;
   try{
-    vars[0]->value.planeptr = plane_t::readPlane(vars[1]->name);
+    vars[0]->value.planeptr = plane_t::loadCDF(vars[1]->name);
     vars[0]->isPlane = true;
   }
   catch(DavidException de)
@@ -142,7 +142,8 @@ symrec* save_plane(symrec** vars,size_t size)
   if(vars == NULL || vars[0] == NULL || !vars[0]->isPlane || vars[1] == NULL || vars[0]->name == NULL || size != 2)
     return NULL;
   try{
-    vars[0]->value.planeptr->savePlane(vars[1]->name,true);
+    //vars[0]->value.planeptr->savePlane(vars[1]->name,true);
+    vars[0]->value.planeptr->writeCDF(vars[1]->name,true);
   }
   catch(DavidException de)
     {
@@ -179,9 +180,11 @@ symrec* fourier_plane(symrec** vars, size_t size)
   plane_t* plane = vars[0]->value.planeptr;
   fftw_complex* data;
   fftw_plan plan ;
-  int* nn = plane->getDimensions();
+  size_t *nn = plane->getDimensions();
+  int dims[2];
+  dims[0] = nn[0]; dims[1] = nn[1];
   data = (fftw_complex*)malloc(nn[0]*nn[1]*sizeof(fftw_complex));
-  plan = fftw_plan_dft(2,nn ,data,data,FFTW_FORWARD,FFTW_ESTIMATE);
+  plan = fftw_plan_dft(2,dims ,data,data,FFTW_FORWARD,FFTW_ESTIMATE);
   for(int i = 0;i<nn[0];i++)
     for(int j = 0;j<nn[1];j++)
       {
@@ -216,10 +219,12 @@ symrec* ifourier_plane(symrec** vars, size_t size)
   plane_t* plane = vars[0]->value.planeptr;
   fftw_complex* data;
   fftw_plan plan ;
-  int* nn = plane->getDimensions(), norm;
+  size_t *nn = plane->getDimensions(), norm;
+  int dims[2];
   norm = nn[0]*nn[1];
+  dims[0] = nn[0];dims[1] = nn[1];
   data = (fftw_complex*)malloc(nn[0]*nn[1]*sizeof(fftw_complex));
-  plan = fftw_plan_dft(2,nn ,data,data,FFTW_BACKWARD,FFTW_ESTIMATE);
+  plan = fftw_plan_dft(2,dims ,data,data,FFTW_BACKWARD,FFTW_ESTIMATE);
   for(int i = 0;i<nn[0];i++)
     for(int j = 0;j<nn[1];j++)
       {

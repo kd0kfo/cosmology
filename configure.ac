@@ -89,7 +89,7 @@ AM_CONDITIONAL([BUILD_WITH_MPI],[test x$mpi != xfalse])
 AC_ARG_WITH([netcdf],AS_HELP_STRING([--with-netcdf],[Include netcdf]),with_netcdf=${withval},AC_MSG_RESULT(Assuming NetCDF is installed in system paths))
 if test x$with_netcdf != x; then
    AC_MSG_RESULT(Using NetCDF)
-   AC_SUBST(NETCDF_CPPFLAGS,"-I $with_netcdf/include/")
+   AC_SUBST(NETCDF_CPPFLAGS,"-I $with_netcdf/include")
    AC_SUBST(NETCDF_LDFLAGS,"-L$with_netcdf/lib")
    AC_SUBST(NETCDF_LDADD,"-lnetcdf")
 fi
