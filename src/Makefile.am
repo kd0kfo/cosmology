@@ -3,7 +3,7 @@
 #FFTW_PATH = $(HOME)/opt/fftw
 #MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
 
-bin_PROGRAMS = ray_trace_ellipse flatten  physcalc makecluster
+bin_PROGRAMS = ray_trace_ellipse flatten  physcalc makecluster plane2netcdf
 
 ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
 ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
@@ -27,6 +27,10 @@ makecluster_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $
 makecluster_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
 makecluster_LDADD = -lmygl -ldnstd  $(NETCDF_LDADD)
 
+plane2netcdf_SOURCES = plane2netcdf.cpp
+plane2netcdf_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
+plane2netcdf_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
+plane2netcdf_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 
 if BUILD_WITH_MPI
 ray_trace_ellipse_SOURCES +=  mpi_utils.cpp
