@@ -41,7 +41,7 @@ bin_PROGRAMS = ray_trace_ellipse$(EXEEXT) flatten$(EXEEXT) \
 	physcalc$(EXEEXT) makecluster$(EXEEXT) plane2netcdf$(EXEEXT)
 @BUILD_WITH_MPI_TRUE@am__append_1 = mpi_utils.cpp
 @BUILD_WITH_MPI_TRUE@am__append_2 = -I${MPI_PATH}/include
-@BUILD_WITH_MPI_TRUE@am__append_3 = -L${MPI_PATH}/lib -lmpi
+@BUILD_WITH_MPI_TRUE@am__append_3 = -L${MPI_PATH}/lib
 @BUILD_WITH_FFT_TRUE@am__append_4 = -I${FFTW3_PATH}/include
 @BUILD_WITH_FFT_TRUE@am__append_5 = -L${FFTW3_PATH}/lib
 @BUILD_WITH_FFT_TRUE@am__append_6 = -lfftw3

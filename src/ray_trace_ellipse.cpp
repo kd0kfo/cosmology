@@ -19,31 +19,19 @@
  * You should have received a copy of the GNU General Public License
  * along with ray_trace_elipse.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "ray_trace_ellipse.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <stdarg.h>
-#include <time.h>
-
-#include "libdnstd/utils.h"
-#include "libdnstd/Complex.h"
-#include "libdnstd/StringTokenizer.h"
-#include "libdnstd/XMLParser.h"
-#include "libdnstd/XMLNode.h"
-
-#include "libmygl/densityprofile.h"
-#include "libmygl/glellipse.h"
-#include "libmygl/planecreator.h"
-#include "libmygl/structs.h"
-
+#include "ray_trace_ellipse.h"
 #include "structs.h"
 
+#ifdef USE_MPI
+#include "mpi_utils.h"
+
+MPIData mpi_data;
+
+#endif
 
 #ifndef _WIN32
 #include <cstdio>
@@ -55,12 +43,52 @@
 #include <unistd.h>
 #endif
 
-#ifdef USE_MPI
-#include "mpi_utils.h"
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <stdarg.h>
+#include <time.h>
 
-MPIData mpi_data;
+#include "libmygl/densityprofile.h"
+#include "libmygl/glellipse.h"
+#include "libmygl/planecreator.h"
+#include "libmygl/structs.h"
 
-#endif
+#include "libdnstd/utils.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/XMLParser.h"
+#include "libdnstd/XMLNode.h"
+
+static const char short_opts[] = "c:dg:hl:m:n:p:tv";
+static const struct option ray_trace_options[] = 
+  {
+    {"newlens", required_argument, NULL,'n'},
+    {"createsurfacemassdensity",required_argument,NULL,'c'},
+    {"usesurfacemassdensity",required_argument,NULL,'m'},
+    {"sourcebmp",required_argument,NULL,SOURCE_BMP},
+    {"deflectionmap",required_argument,NULL,DEFLECTION_MAP},
+    {"lens",required_argument,NULL,'l'},
+    {"forcerun",no_argument,NULL,FORCE_RUN},
+    {"stoprun",no_argument,NULL,STOP_RUN},
+    {"prefix",required_argument,NULL,FILE_PREFIX},
+    {"usegrid",required_argument,NULL,USE_GRID},
+    {"bgcolor",required_argument,NULL,RBG_COLOR},
+    {"xoffset",required_argument,NULL,XOFFSET},
+    {"yoffset",required_argument,NULL,YOFFSET},
+    {"parameters",required_argument,NULL,'p'},
+    {"glellipsebounds",required_argument,NULL,'g'},
+    {"timestamp",no_argument,NULL,'t'},
+    {"addplanes",required_argument,NULL,ADD_PLANES},
+    {"subtractplanes",required_argument,NULL,SUBTRACT_PLANES},
+    {"squareplane",required_argument,NULL,SQUARE_PLANE},
+    {"savesourcelocations",no_argument,NULL,SAVESOURCE_LOC},
+    {"daemon",no_argument,NULL,'d'},
+    {"drawremovedarea",no_argument,NULL,DRAW_REMOVED_AREA},
+    {"help",no_argument,NULL,'h'},
+    {"verbose",no_argument,NULL,'v'},
+    {0,0,0,0}
+  };
 
 void DefaultParameters(struct general_parameters *params)
 {
@@ -731,9 +759,38 @@ void parse_bounds(char *csv_bounds)
     }
 }
 
+Plane<Double>* load_mass_density(const char *filename)
+{
+  Plane<Double> *retval = NULL;
+#ifdef USE_MPI
+  double *buffer = NULL;
+  int dims[2];
+  size_t counter = 0, curr_dim;
+  if(utils::is_master())
+    {
+      retval = Plane<Double>::loadCDF(optarg);
+      if(retval == NULL)
+	throw DavidException("Could not get Mass Density Array",DavidException::NULL_POINTER);
+      dims[0] = (int) retval->numberOfRows();
+      dims[1] = (int) retval->numberOfColumns();
+    }
+  if(MPI_Bcast(dims,2,MPI_INT,mpi_data.rank,MPI_COMM_WORLD) != MPI_SUCCESS)
+    throw DavidException("Could not broadcast Density Plane dimensions",DavidException::MPI_ERROR_CODE);
+
+  buffer = new double[dims[0]*dims[1]];
+  
+  // BROADCAST HERE!!! (or perhaps switch to Global Arrays...)      
+  
+  delete[] buffer;
+#else
+  retval = Plane<Double>::loadCDF(optarg);
+#endif
+
+  return retval;
+}
+
 int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 {
-  static const char short_opts[] = "c:dg:hl:m:n:p:tv";
   int option_index = 0, c;
   void print_help();
 
@@ -802,7 +859,7 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	  args->makeMassDensity = optarg;
 	  break;
 	case 'm':
-	  args->lensMassDensity = Plane<Double>::loadCDF(optarg);
+	  args->lensMassDensity = load_mass_density(optarg);
 	  break;
 	case 't':
 	  args->useTimeStamp = true;

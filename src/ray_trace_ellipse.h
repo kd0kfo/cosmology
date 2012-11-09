@@ -35,36 +35,6 @@ enum option_keys{ SOURCE_BMP = 1,DEFLECTION_MAP,FORCE_RUN,
 		  SUBTRACT_PLANES, ADD_PLANES, SQUARE_PLANE,
 		  SAVESOURCE_LOC,DRAW_REMOVED_AREA};
 
-static const struct option ray_trace_options[] = 
-  {
-    {"newlens", required_argument, NULL,'n'},
-    {"createsurfacemassdensity",required_argument,NULL,'c'},
-    {"usesurfacemassdensity",required_argument,NULL,'m'},
-    {"sourcebmp",required_argument,NULL,SOURCE_BMP},
-    {"deflectionmap",required_argument,NULL,DEFLECTION_MAP},
-    {"lens",required_argument,NULL,'l'},
-    {"forcerun",no_argument,NULL,FORCE_RUN},
-    {"stoprun",no_argument,NULL,STOP_RUN},
-    {"prefix",required_argument,NULL,FILE_PREFIX},
-    {"usegrid",required_argument,NULL,USE_GRID},
-    {"bgcolor",required_argument,NULL,RBG_COLOR},
-    {"xoffset",required_argument,NULL,XOFFSET},
-    {"yoffset",required_argument,NULL,YOFFSET},
-    {"parameters",required_argument,NULL,'p'},
-    {"glellipsebounds",required_argument,NULL,'g'},
-    {"timestamp",no_argument,NULL,'t'},
-    {"addplanes",required_argument,NULL,ADD_PLANES},
-    {"subtractplanes",required_argument,NULL,SUBTRACT_PLANES},
-    {"squareplane",required_argument,NULL,SQUARE_PLANE},
-    {"savesourcelocations",no_argument,NULL,SAVESOURCE_LOC},
-    {"daemon",no_argument,NULL,'d'},
-    {"drawremovedarea",no_argument,NULL,DRAW_REMOVED_AREA},
-    {"help",no_argument,NULL,'h'},
-    {"verbose",no_argument,NULL,'v'},
-    {0,0,0,0}
-  };
-
-
 /** \mainpage Documentation of the Main Executables.
  * Copyright 2007, 2010 David Coss, PhD
  */

@@ -181,4 +181,8 @@ void utils::mpi_adjust_glellipsebounds(int *glellipseBounds, size_t N)
 	  }
 }
 
+bool utils::is_master()
+{
+  return mpi_data.rank == MASTER_RANK;
+}
 

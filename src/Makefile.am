@@ -35,7 +35,7 @@ plane2netcdf_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 if BUILD_WITH_MPI
 ray_trace_ellipse_SOURCES +=  mpi_utils.cpp
 ray_trace_ellipse_CPPFLAGS += -I${MPI_PATH}/include
-ray_trace_ellipse_LDFLAGS += -L${MPI_PATH}/lib -lmpi
+ray_trace_ellipse_LDFLAGS += -L${MPI_PATH}/lib
 endif
 
 if BUILD_WITH_FFT
