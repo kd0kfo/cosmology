@@ -762,29 +762,8 @@ void parse_bounds(char *csv_bounds)
 Plane<Double>* load_mass_density(const char *filename)
 {
   Plane<Double> *retval = NULL;
-#ifdef USE_MPI
-  double *buffer = NULL;
-  int dims[2];
-  size_t counter = 0, curr_dim;
-  if(utils::is_master())
-    {
-      retval = Plane<Double>::loadCDF(optarg);
-      if(retval == NULL)
-	throw DavidException("Could not get Mass Density Array",DavidException::NULL_POINTER);
-      dims[0] = (int) retval->numberOfRows();
-      dims[1] = (int) retval->numberOfColumns();
-    }
-  if(MPI_Bcast(dims,2,MPI_INT,mpi_data.rank,MPI_COMM_WORLD) != MPI_SUCCESS)
-    throw DavidException("Could not broadcast Density Plane dimensions",DavidException::MPI_ERROR_CODE);
 
-  buffer = new double[dims[0]*dims[1]];
-  
-  // BROADCAST HERE!!! (or perhaps switch to Global Arrays...)      
-  
-  delete[] buffer;
-#else
   retval = Plane<Double>::loadCDF(optarg);
-#endif
 
   return retval;
 }
