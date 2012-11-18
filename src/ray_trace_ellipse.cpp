@@ -60,6 +60,15 @@ MPIData mpi_data;
 #include "libdnstd/XMLParser.h"
 #include "libdnstd/XMLNode.h"
 
+bool should_write()
+{
+#ifndef USE_MPI
+  return true;
+#else
+  return utils::is_master();
+#endif
+}
+
 static const char short_opts[] = "c:dg:hl:m:n:p:tv";
 static const struct option ray_trace_options[] = 
   {
@@ -221,10 +230,10 @@ int run_simulation(struct ray_trace_arguments *args)
 
 
 #ifndef __USE_BOINC__
-  if(lens != NULL)
+  if(lens != NULL && should_write())
     lens->draw(fullLensFilename,false,args->gridSpace > 0,args->gridSpace);
 		
-  if(sources != NULL)
+  if(sources != NULL && should_write())
     {
       std::string fullSourceFilename = args->fileNamePrefix + "sources.bmp";
       verbosePrint(args,"Drawing sources\n");
@@ -922,6 +931,7 @@ void print_help()
   verbosePrint(&blah, "Takes the plane, filename, and makes it a square by buffing the shorter dimension with zeros\n");
   verbosePrint(&blah, "--savesourcelocations filename\n");
   verbosePrint(&blah, "Runs raytracing and saves the location of source points in the lens plane.\n");
+  verbosePrint(&blah, "-v, --verbose Turns on verbose output\n");
 }
 
 
@@ -1170,6 +1180,10 @@ void verbosePrint(const struct ray_trace_arguments *args, const char * frmt, ...
 {
   if(args != NULL && args->verbose == 0)
     return;
+
+#ifdef USE_MPI
+  std::cout << "[Process " << mpi_data.rank << "] ";
+#endif
 
   if(args->useTimeStamp)
     std::cout << getTime() << ": ";
