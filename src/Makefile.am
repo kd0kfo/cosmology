@@ -1,11 +1,6 @@
-#LIBDNSTD_PATH =/home/dcoss/tmp/blah/libdnstd/install
-#LIBMYGL_PATH = /home/dcoss/tmp/blah/libmygl/install
-#FFTW_PATH = $(HOME)/opt/fftw
-#MYINCLUDES = -I $(FFTW_PATH)/include/ -I $(LIBMYGL_PATH)/include/  -I $(LIBDNSTD_PATH)/include/
-
 bin_PROGRAMS = ray_trace_ellipse flatten  physcalc makecluster plane2netcdf
 
-ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp
+ray_trace_ellipse_SOURCES = ray_trace_ellipse.cpp version.c
 ray_trace_ellipse_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
 ray_trace_ellipse_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
 ray_trace_ellipse_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
@@ -17,7 +12,7 @@ flatten_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
 flatten_LDADD = -lmygl -ldnstd $(NETCDF_LDADD)
 
 AM_YFLAGS = -d
-physcalc_SOURCES =  physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp
+physcalc_SOURCES =  physcalc.yacc.ypp physcalc.cpp physcalc.lex.lpp functions.cpp version.c
 physcalc_CPPFLAGS = -I$(LIBMYGL_PATH)/include/  -I$(LIBDNSTD_PATH)/include/ $(NETCDF_CPPFLAGS)
 physcalc_LDFLAGS = -L${LIBMYGL_PATH}/lib -L${LIBDNSTD_PATH}/lib $(NETCDF_LDFLAGS)
 physcalc_LDADD = -lmygl -ldnstd  $(NETCDF_LDADD)
@@ -50,3 +45,10 @@ flatten_LDFLAGS += -static
 physcalc_LDFLAGS += -static
 makecluster_LDFLAGS += -static
 endif
+
+
+version.c: 
+	git rev-parse HEAD | awk ' BEGIN {print "#include \"version.h\""} {print "const char * build_git_sha = \"" $$0"\";"} END {}' > version.c
+	date | awk 'BEGIN {} {print "const char * build_git_time = \""$$0"\";"} END {} ' >> version.c
+
+.PHONY: version.c

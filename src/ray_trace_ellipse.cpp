@@ -25,6 +25,18 @@
 
 #include "ray_trace_ellipse.h"
 #include "structs.h"
+#include "version.h"
+
+#include "libmygl/densityprofile.h"
+#include "libmygl/glellipse.h"
+#include "libmygl/planecreator.h"
+#include "libmygl/structs.h"
+
+#include "libdnstd/utils.h"
+#include "libdnstd/Complex.h"
+#include "libdnstd/StringTokenizer.h"
+#include "libdnstd/XMLParser.h"
+#include "libdnstd/XMLNode.h"
 
 #ifdef USE_MPI
 #include "mpi_utils.h"
@@ -49,17 +61,6 @@ MPIData mpi_data;
 #include <stdarg.h>
 #include <time.h>
 
-#include "libmygl/densityprofile.h"
-#include "libmygl/glellipse.h"
-#include "libmygl/planecreator.h"
-#include "libmygl/structs.h"
-
-#include "libdnstd/utils.h"
-#include "libdnstd/Complex.h"
-#include "libdnstd/StringTokenizer.h"
-#include "libdnstd/XMLParser.h"
-#include "libdnstd/XMLNode.h"
-
 bool should_write()
 {
 #ifndef USE_MPI
@@ -69,7 +70,8 @@ bool should_write()
 #endif
 }
 
-static const char short_opts[] = "c:dg:hl:m:n:p:tv";
+static const char short_opts[] = "Vc:dg:hl:m:n:p:tv";
+enum {FLAGS_BUILD_INFO = 0};
 static const struct option ray_trace_options[] = 
   {
     {"newlens", required_argument, NULL,'n'},
@@ -96,6 +98,8 @@ static const struct option ray_trace_options[] =
     {"drawremovedarea",no_argument,NULL,DRAW_REMOVED_AREA},
     {"help",no_argument,NULL,'h'},
     {"verbose",no_argument,NULL,'v'},
+    {"version",no_argument,NULL,'V'},
+    {"build",no_argument,NULL,FLAGS_BUILD_INFO},
     {0,0,0,0}
   };
 
@@ -777,6 +781,22 @@ Plane<Double>* load_mass_density(const char *filename)
   return retval;
 }
 
+void print_version()
+{
+  if(should_write())
+    printf("\nVersion %s\n\n", PACKAGE_VERSION);
+}
+
+void print_build_info()
+{
+  print_version();
+  if(should_write())
+    {
+      printf("Git Commit: %s\n",build_git_sha);
+      printf("Build Time: %s\n\n",build_git_time);
+    }
+}
+
 int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 {
   int option_index = 0, c;
@@ -871,6 +891,12 @@ int parseArgs(int argc, char** argv, struct ray_trace_arguments *args)
 	case 'v':
 	  args->verbose = true;
 	  break;
+	case 'V':
+	  print_version();
+	  return 0;
+	case FLAGS_BUILD_INFO:
+	  print_build_info();
+	  return 0;
 	case 'h':
 	default:
 	  print_help();

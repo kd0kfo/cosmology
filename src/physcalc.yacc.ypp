@@ -26,12 +26,14 @@
  * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
  */
 %{
-#include "symrec.h"
-#include "functions.h"
-#include "physcalc.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include "symrec.h"
+#include "functions.h"
+#include "physcalc.h"
+
 #include <math.h>  /* For math functions, cos(), sin(), etc.  */
 #include <stdio.h>
 #include <string.h>

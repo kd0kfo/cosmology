@@ -29,6 +29,7 @@
 #include "symrec.h"
 #include "physcalc.yacc.h"
 #include "physcalc.h"
+#include "version.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -295,12 +296,12 @@ void do_ls(const char *path)
 
 void print_copyright()
 {
-  printf("%s v%s  Copyright (C) 2011 David Coss, PhD\n",program_name,PACKAGE_VERSION);
+  printf("%s v%s  Copyright (C) 2012 David Coss, PhD\n",program_name,PACKAGE_VERSION);
   printf("This program comes with ABSOLUTELY NO WARRANTY. Use and redistribution rights are granted under the terms of the GNU General Public License; for details visit http://www.gnu.org/copyleft/gpl.html or read the COPYING file distributed with this program.\n");
 }
 
 static const char short_opts[] = "c:f:hv";
-enum{PHYSCALC_ARG_TAB_LONG,PHYSCALC_ARG_TAB_SHORT,PHYSCALC_ARG_TAB_ALL};
+enum{PHYSCALC_ARG_TAB_LONG,PHYSCALC_ARG_TAB_SHORT,PHYSCALC_ARG_TAB_ALL,PHYSCALC_BUILD_INFO};
 struct option long_opts[] =
   {
     {"calc",1,NULL,'c'},
@@ -310,6 +311,7 @@ struct option long_opts[] =
     {"tab-short",0,NULL,PHYSCALC_ARG_TAB_SHORT},
     {"tab-all",0,NULL,PHYSCALC_ARG_TAB_ALL},
     {"version",0,NULL,'v'},
+    {"build",0,NULL,PHYSCALC_BUILD_INFO},
     {NULL,0,NULL,0}
   };
  
@@ -334,6 +336,12 @@ void print_help()
 	  break;
 	case 'h':
 	  printf("Display this message");
+	  break;
+	case 'v':
+	  printf("Display the version of %s",program_name);
+	  break;
+	case PHYSCALC_BUILD_INFO:
+	  printf("Display build information");
 	  break;
 	default:
 	  break;
@@ -361,6 +369,12 @@ void print_tab_complete(int short_or_long)
       
       the_opts++;
     }
+}
+
+void print_build_info()
+{
+  printf("Git Commit: %s\n",build_git_sha);
+  printf("Build Time: %s\n\n",build_git_time);
 }
 
 int main (int argc, char **argv)
@@ -415,8 +429,13 @@ int main (int argc, char **argv)
 	  print_tab_complete(optflag);
 	  exit(0);
 	  break;
-	case 'v':
+	case PHYSCALC_BUILD_INFO: case 'v':
 	  print_copyright();
+	  if(optflag == PHYSCALC_BUILD_INFO)
+	    {
+	      printf("\n");
+	      print_build_info();
+	    }
 	  exit(0);
 	case 'h':default:
 	  print_copyright();
