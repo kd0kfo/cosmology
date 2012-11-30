@@ -31,12 +31,14 @@
 #include "libmygl/glellipse.h"
 #include "libmygl/planecreator.h"
 #include "libmygl/structs.h"
+#include "libmygl/version.h"
 
 #include "libdnstd/utils.h"
 #include "libdnstd/Complex.h"
 #include "libdnstd/StringTokenizer.h"
 #include "libdnstd/XMLParser.h"
 #include "libdnstd/XMLNode.h"
+#include "libdnstd/version.h"
 
 #ifdef USE_MPI
 #include "mpi_utils.h"
@@ -794,6 +796,13 @@ void print_build_info()
     {
       printf("Git Commit: %s\n",build_git_sha);
       printf("Build Time: %s\n\n",build_git_time);
+      
+      printf("mygl commit: %s\n",libmygl::build_git_sha);
+      printf("mygl Build Time: %s\n\n",libmygl::build_git_time);
+
+      printf("dnstd commit: %s\n",libdnstd::build_git_sha);
+      printf("dnstd Build Time: %s\n\n",libdnstd::build_git_time);
+      
     }
 }
 

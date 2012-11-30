@@ -31,6 +31,10 @@
 #include "physcalc.h"
 #include "version.h"
 
+#include "libmygl/version.h"
+
+#include "libdnstd/version.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -375,6 +379,13 @@ void print_build_info()
 {
   printf("Git Commit: %s\n",build_git_sha);
   printf("Build Time: %s\n\n",build_git_time);
+  
+  printf("mygl commit: %s\n",libmygl::build_git_sha);
+  printf("mygl Build Time: %s\n\n",libmygl::build_git_time);
+
+  printf("dnstd commit: %s\n",libdnstd::build_git_sha);
+  printf("dnstd Build Time: %s\n\n",libdnstd::build_git_time);
+
 }
 
 int main (int argc, char **argv)
