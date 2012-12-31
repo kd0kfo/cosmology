@@ -300,7 +300,7 @@ void do_ls(const char *path)
 
 void print_copyright()
 {
-  printf("%s v%s  Copyright (C) 2012 David Coss, PhD\n",program_name,PACKAGE_VERSION);
+  printf("%s v%s  Copyright (C) 2012 David Coss, PhD\n",program_name,VERSION);
   printf("This program comes with ABSOLUTELY NO WARRANTY. Use and redistribution rights are granted under the terms of the GNU General Public License; for details visit http://www.gnu.org/copyleft/gpl.html or read the COPYING file distributed with this program.\n");
 }
 

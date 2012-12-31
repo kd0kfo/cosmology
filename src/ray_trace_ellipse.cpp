@@ -786,7 +786,7 @@ Plane<Double>* load_mass_density(const char *filename)
 void print_version()
 {
   if(should_write())
-    printf("\nVersion %s\n\n", PACKAGE_VERSION);
+    printf("\nVersion %s\n\n", VERSION);
 }
 
 void print_build_info()
