@@ -93,3 +93,8 @@ foreach(curr_bin ${NETCDF_BINS})
 endforeach(curr_bin)
 
 install(TARGETS ray_trace_ellipse flatten  physcalc makecluster plane2netcdf DESTINATION bin)
+
+# tests
+enable_testing()
+add_test(ray_trace_test ${CMAKE_COMMAND} -DTEST_DIR=${PROJECT_SOURCE_DIR}/test -DEXE_DIR=${PROJECT_BINARY_DIR} -P ${CMAKE_SOURCE_DIR}/test/test_schwarzschild.cmake)
+
