@@ -1,5 +1,6 @@
+#line 2 "/home/david/research/cosmology/src/physcalc.lex.cpp"
 
-#line 3 "physcalc.lex.cpp"
+#line 4 "/home/david/research/cosmology/src/physcalc.lex.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -511,7 +512,7 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "physcalc.lex.lpp"
+#line 1 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 /**
  * 
  * This file is part of physcalc, an interactive calculator utility
@@ -538,7 +539,7 @@ char *yytext;
  * You should have received a copy of the GNU General Public License
  * along with physcalc.  If not, see <http://www.gnu.org/licenses/>.
  */
-#line 28 "physcalc.lex.lpp"
+#line 28 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 #include "physcalc.h"
 #include "symrec.h"
 #include "physcalc.yacc.h"
@@ -551,7 +552,7 @@ char *yytext;
 void yyerror(const char *);
 extern int PHYSCALC_is_interactive;
 
-#line 555 "physcalc.lex.cpp"
+#line 556 "/home/david/research/cosmology/src/physcalc.lex.cpp"
 
 #define INITIAL 0
 
@@ -738,9 +739,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 55 "physcalc.lex.lpp"
+#line 55 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 
-#line 744 "physcalc.lex.cpp"
+#line 745 "/home/david/research/cosmology/src/physcalc.lex.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -825,42 +826,42 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 56 "physcalc.lex.lpp"
+#line 56 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return RADIX;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 57 "physcalc.lex.lpp"
+#line 57 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return ANS;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 58 "physcalc.lex.lpp"
+#line 58 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return EXIT;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 59 "physcalc.lex.lpp"
+#line 59 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return EXIT;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 60 "physcalc.lex.lpp"
+#line 60 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return COPYRIGHT;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 61 "physcalc.lex.lpp"
+#line 61 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 return HELP;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 64 "physcalc.lex.lpp"
+#line 64 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {yylval.val.re = M_PI;yylval.val.im = 0; return NUM;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 66 "physcalc.lex.lpp"
+#line 66 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
   symrec* rec = NULL;
   if(strcmp(yytext,"i") == 0)
@@ -877,12 +878,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 79 "physcalc.lex.lpp"
+#line 79 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 { yylval.val.re = 0; yylval.val.im = 0;return NUM;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 81 "physcalc.lex.lpp"
+#line 81 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
                   yylval.val.re = atof(yytext);yylval.val.im = 0;
                   return NUM;
@@ -890,7 +891,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 86 "physcalc.lex.lpp"
+#line 86 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
   yylval.val.im = atof(yytext);yylval.val.re = 0;
                   return NUM;
@@ -898,7 +899,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 91 "physcalc.lex.lpp"
+#line 91 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
 	yylval.val.re  = atof(yytext);yylval.val.im = 0.0;
             return NUM;
@@ -906,7 +907,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 96 "physcalc.lex.lpp"
+#line 96 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
 	    yylval.val.im  = atof(yytext);yylval.val.re = 0.0;
             return NUM;
@@ -914,7 +915,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 101 "physcalc.lex.lpp"
+#line 101 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
 	       unsigned int tmp;
 	       sscanf(yytext,"0x%x",&tmp);
@@ -925,7 +926,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 109 "physcalc.lex.lpp"
+#line 109 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {
 	       unsigned int tmp;
 	       sscanf(yytext,"0%o",&tmp);
@@ -936,26 +937,26 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 117 "physcalc.lex.lpp"
+#line 117 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 {  return *yytext;  }
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 119 "physcalc.lex.lpp"
+#line 119 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 ;//ignore whitespace
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 122 "physcalc.lex.lpp"
+#line 122 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 yyerror("Unknown Character.");
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 124 "physcalc.lex.lpp"
+#line 124 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 ECHO;
 	YY_BREAK
-#line 959 "physcalc.lex.cpp"
+#line 960 "/home/david/research/cosmology/src/physcalc.lex.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1953,7 +1954,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 124 "physcalc.lex.lpp"
+#line 124 "/home/david/research/cosmology/src/physcalc.lex.lpp"
 
 
 
