@@ -475,6 +475,7 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 
   int rows = lens->numberOfRows();
   int columns = lens->numberOfColumns();
+  double newl[2];
 
   for(int i = 0;i<columns;i++)
     {
@@ -486,7 +487,6 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 	      double y = j - (rows/2);
 	      double l = sqrt(x*x + y*y);
 	      double angle = (x != 0) ? atan((y/x)) : 3.14159/2;//note trig functions use radians
-	      double * newl = new double[2];
 	      newl[0] = .5*(l+sqrt(l*l+4));
 	      newl[1] = .5*(l-sqrt(l*l+4));
 
@@ -497,8 +497,6 @@ template <class T> void constructLens(Plane<T> * source,Plane<T> * lens,T valueO
 		  if(newX < rows/2 && newX > -1*rows/2 && newY < rows/2 && newY > -1*columns/2)
 		    lens->setValue(newX+(rows/2),newY+(columns/2),lensValue);
 		}
-	      delete [] newl;
-	      newl = 0;
 	    }
 	}
     }
